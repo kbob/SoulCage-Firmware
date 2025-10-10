@@ -1,0 +1,18 @@
+{
+  "idf.espIdfPath": "/Users/kbob/lib/esp/esp-idf-v5.5.1",
+  "idf.pythonInstallPath": "/Users/kbob/.nix-profile/bin/python",
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
+  "idf.port": "/dev/tty.usbmodem401201",
+  "idf.toolsPath": "/Users/kbob/.espressif",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32s3"
+  },
+  "clangd.path": "/Users/kbob/.espressif/tools/esp-clang/esp-19.1.2_20250312/esp-clang/bin/clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=/Users/kbob/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc",
+    "--compile-commands-dir=/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build"
+  ]
+}
