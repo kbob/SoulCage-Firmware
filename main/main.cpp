@@ -6,10 +6,13 @@
 #include "esp_partition.h"
 #include "esp_timer.h"
 
+// Project headers
+
 // Component headers
+#include "flash_image.h"
 #include "memory_dma.h"
 
-#define BENCHMARK_DMA
+#undef BENCHMARK_DMA
 
 #ifdef BENCHMARK_DMA
 
@@ -83,71 +86,25 @@
 
 #endif
 
-static void print_partition_table()
-{
-    auto iter = esp_partition_find(
-        ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
-    int i = 0;
-    printf("Partition Table\n");
-    do {
-        auto part = esp_partition_get(iter);
-        printf("  %d: (%#4x %#4x) %2s %#08lx %#8lx \"%s\"\n",
-            i,
-            part->type, part->subtype,
-            part->readonly ? "ro" : "rw",
-            part->address, part->size,
-            part->label);
-        i++;
-    } while (esp_partition_next(iter));
-    printf("\n");
-}
-
-static const size_t PART_COUNT = 3;
-const char *part_labels[PART_COUNT] = {"Intro", "soul_f", "soul_m"};
-esp_partition_mmap_handle_t part_handles[PART_COUNT];
-const void *part_addrs[PART_COUNT];
-size_t part_sizes[PART_COUNT];
-
-
-static void map_partitions()
-{
-
-    for (int i = 0; i < PART_COUNT; i++) {
-        auto type = ESP_PARTITION_TYPE_DATA;
-        auto subtype = ESP_PARTITION_SUBTYPE_ANY;
-        auto label = part_labels[i];
-        auto *part = esp_partition_find_first(type, subtype, label);
-        if (part == NULL) {
-            printf("\"Intro\" partition not found\n");
-            return;
-        }
-
-        auto memory = ESP_PARTITION_MMAP_DATA;
-        const void *ptr;
-        esp_partition_mmap_handle_t handle;
-        ESP_ERROR_CHECK(
-            esp_partition_mmap(part, 0, part->size, memory, &ptr, &handle)
-        );
-        printf("mmapped %-6s at %p, size %ld\n", label, ptr, part->size);
-        printf("\n");
-        part_handles[i] = handle;
-        part_addrs[i] = ptr;
-        part_sizes[i] = part->size;
-    }
-
-}
-
 extern "C" void app_main()
 {
     printf("app_main\n");
 #ifdef WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
-    printf("This is the Waveshare board!\n");
+    printf("This is the Waveshare 1.69 board!\n");
 #endif
     printf("board = \"%s\"\n", BOARD);
     printf("\n");
-    print_partition_table();
 
-    map_partitions();
+    printf("Flash images found:\n");
+    for (size_t i = 0; i < FlashImage::MAX_IMAGES; i++) {
+        if (FlashImage *image = FlashImage::get_by_index(i)) {
+            printf("  \"%s\"%*s %zu bytes, %zu frames\n",
+                image->label(),
+                (int)(FlashImage::MAX_LABEL_SIZE - std::strlen(image->label())), "",
+                image->size_bytes(),image->frame_count());
+        }
+    }
+    printf("\n");
 
 #ifdef BENCHMARK_DMA
     benchmark_SRAM_DMA();
