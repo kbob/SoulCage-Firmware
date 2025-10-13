@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 
@@ -23,6 +24,7 @@ public:
     const void *base_addr() const { return m_addr; }
     const pixel_type *frame_addr(size_t i) const
     {
+        assert(i < IMAGE_HEIGHT);
         return (const pixel_type *)m_addr + i * FRAME_PIXEL_COUNT;
     }
 

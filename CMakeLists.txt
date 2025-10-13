@@ -2,9 +2,14 @@ cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-# Change the target board here.  Edit both lines.
-set(board "waveshare-esp32-s3-lcd-touch-1.69")
-idf_build_set_property(COMPILE_DEFINITIONS WAVESHARE_ESP32_S3_LCD_TOUCH_1_69=y APPEND)
+# Change the target board here.  Edit or uncomment all three lines.
+# set(board "waveshare-esp32-s3-lcd-touch-1.69")
+# idf_build_set_property(COMPILE_DEFINITIONS
+#     WAVESHARE_ESP32_S3_LCD_TOUCH_1_69=y APPEND)
+
+set(board "waveshare-esp32-s3-lcd-1.28")
+idf_build_set_property(COMPILE_DEFINITIONS
+    WAVESHARE_ESP32_S3_LCD_1_28=y APPEND)
 
 idf_build_set_property(COMPILE_DEFINITIONS "BOARD=\"${board}\"" APPEND)
 # message("cdefs: ${COMPILE_DEFINITIONS}")
@@ -32,7 +37,7 @@ add_custom_command(OUTPUT ${Intro_file}
         ${PROJECT_DIR}/images/Intro.h)
 
 add_custom_command(OUTPUT ${soul_f_file}
-    COMMAND echo "Here we go ${soul_f_file}"
+    COMMAND echo "Flashing ${soul_f_file}"
     COMMAND ${python}
     ${PROJECT_DIR}/tools/gen_raw_image.py
         -o ${soul_f_file}

@@ -4,12 +4,21 @@ MemoryDMA MemoryDMA::the_instance;
 
 MemoryDMA::MemoryDMA()
 {
-    async_memcpy_config_t config = {};
-    config.dma_burst_size = 16;
+    const async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    // config.dma_burst_size = 16;
 
+    // async_memcpy_handle_t mcp_dummy;
+
+    // ESP_ERROR_CHECK(
+    //     esp_async_memcpy_install_gdma_ahb(&config, &mcp_dummy)
+    // );
     ESP_ERROR_CHECK(
-        esp_async_memcpy_install_gdma_ahb(&config, &mcp)
+        // esp_async_memcpy_install_gdma_ahb(&config, &mcp)
+        esp_async_memcpy_install(&config, &mcp)
     );
+    // ESP_ERROR_CHECK(
+    //     esp_async_memcpy_uninstall(mcp_dummy)
+    // );
 }
 
 MemoryDMA::~MemoryDMA()
