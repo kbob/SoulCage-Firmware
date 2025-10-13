@@ -44,8 +44,9 @@ Open a terminal (use WSL if you're on Windows), navigate into the `prebuilt` dir
 
 # More Needed
 
-I want to make this usable for Halloween 2025.  So I'll get 
+I want to make this available for Halloween 2025.  So I've published
 some prebuilt binaries and instructions for flashing them.
 
-Real cleanup will take a while.  As the last commit message says,
-this repo is a real mess but it's (barely) functional.
+You're welcome to build from source, but be warned, the code is
+a great big mess.  Real cleanup will take a while.  I intend
+to clean it all up, but it will take a while.
