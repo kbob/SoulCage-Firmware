@@ -17,14 +17,42 @@
 
 // XXX separate into display_controllers.h
 struct DisplayController {
-    static const size_t INIT_STRING_MAX = 20;
-    uint8_t init_string[INIT_STRING_MAX];
-    // initialization sequence
+
+    // Some controllers need slightly different
+    int16_t CASET_x0_adjust;
+    int16_t CASET_x1_adjust;
+    int16_t RASET_y0_adjust;
+    int16_t RASET_y1_adjust;
+
+    // Every controller needs to be initialized.
+    // The init string format is modeled after TFT-eSPI's.
+    // Very compact, easy to parse.
+    size_t init_string_size;
+    const uint8_t *init_string;
 };
 
 // XXX separate into display_controllers.cpp
-DisplayController ST7789;
-DisplayController GC9A01;
+static const uint8_t ST7789v2_init_string[0] = {};
+
+const DisplayController ST7789v2 = {
+    .CASET_x0_adjust = 0,
+    .CASET_x1_adjust = 0,
+    .RASET_y0_adjust = +20, // Is this all ST7789v2 or just the Waveshare 1.69?
+    .RASET_y1_adjust = +20,
+    .init_string_size = sizeof ST7789v2_init_string,
+    .init_string = ST7789v2_init_string,
+};
+
+static const uint8_t GC9A01_init_string[0] = {};
+
+const DisplayController GC9A01 = {
+    .CASET_x0_adjust = 0,
+    .CASET_x1_adjust = -1, // Why?
+    .RASET_y0_adjust = 0,
+    .RASET_y1_adjust = 0,
+    .init_string_size = sizeof GC9A01_init_string,
+    .init_string = GC9A01_init_string,
+};
 
 // Should move these to a central location for board info.
 struct DisplayDescriptor {
@@ -40,7 +68,7 @@ struct DisplayDescriptor {
     gpio_num_t dc_gpio;
     gpio_num_t reset_gpio;
     uint32_t spi_clock_speed;
-    DisplayController& ctlr;
+    const DisplayController& ctlr;
     // Could add...
     //   feature flags: VE, bidirectional, SPI width...
 };
@@ -53,24 +81,6 @@ struct Display {
 
 // Board definitions.  Extend as needed.
 #ifdef WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
-
-// static const DisplayDescriptor display_desc = {
-//     .height = 280,
-//     .width = 240,
-//     .spi_host = SPI2_HOST,
-//     .sclk_gpio = 6,
-//     .pico_gpio = 11,
-//     .cs_gpio = GPIO_NUM_5,
-//     .dc_gpio = GPIO_NUM_4,
-//     .reset_gpio = GPIO_NUM_8,
-//     .spi_clock_speed = 80'000'000,
-//     .ctlr = ST7789,
-// };
-
-// static Display display = {
-//     .desc = display_desc,
-//     .dev_handle = 0,
-// };
 
 static Display displays[] = {
     [0] = {
@@ -85,7 +95,7 @@ static Display displays[] = {
             .dc_gpio = GPIO_NUM_4,
             .reset_gpio = GPIO_NUM_8,
             .spi_clock_speed = 80'000'000,
-            .ctlr = ST7789,
+            .ctlr = ST7789v2,
         },
         .dev_handle = 0,
     },
@@ -296,18 +306,21 @@ static void spi_write_addr(Display& disp, uint16_t addr1, uint16_t addr2)
 
 static void spi_send_start_write_command(
     Display& disp,
-    uint16_t x1, uint16_t y1,
-    uint16_t x2, uint16_t y2)
+    uint16_t x0, uint16_t y0,
+    uint16_t x1, uint16_t y1)
 {
+    const DisplayController &ctlr = disp.desc.ctlr;
+    x0 += ctlr.CASET_x0_adjust;
+    x1 += ctlr.CASET_x1_adjust;
+    y0 += ctlr.RASET_y0_adjust;
+    y1 += ctlr.RASET_y1_adjust;
     gpio_set_level(disp.desc.dc_gpio, SPI_COMMAND_MODE);
 
     // spi_verbose = true;
     spi_write_command(disp, 0x2A);
-    // spi_write_addr(disp, x1, x2); // ST7789
-    spi_write_addr(disp, x1, x2-1); // GC9A01
+    spi_write_addr(disp, x0, x1);
     spi_write_command(disp, 0x2B);
-    // spi_write_addr(disp, y1 + 20, y2 + 20); // ST7789: Why 20?
-    spi_write_addr(disp, y1, y2); // GC9A01
+    spi_write_addr(disp, y0, y1);
     spi_write_command(disp, 0x2C);
     // spi_verbose = false;
 

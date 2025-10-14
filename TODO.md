@@ -2,7 +2,7 @@
 
 ## Bugs
 
-Fix the quick hacks in spi_display.cpp that change PASET
+&#x2705; Fix the quick hacks in spi_display.cpp that change PASET
 and CASET commands
 
 Fix pixel format on 1.28 board (GC9A01)
