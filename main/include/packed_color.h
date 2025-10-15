@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 
@@ -136,6 +137,34 @@ public:
         return grey565(gray);
     }
 };
+
+// Specializations for performance
+// typedef PackedColorEE<EOrder::RGB565, PixelEndian::BIG> rgb_be;
+// typedef PackedColorEE<EOrder::BGR565, PixelEndian::BIG> bgr_be;
+
+template <>
+template <>
+__inline__
+PackedColorEE<EOrder::RGB565, PixelEndian::BIG>
+PackedColorEE<EOrder::RGB565, PixelEndian::BIG>::from_PackedColor(
+    const PackedColorEE<EOrder::RGB565, PixelEndian::BIG>& that
+) {
+    uint16_t src = *(const uint16_t *) that.b;
+    uint16_t r, g, b;
+    if constexpr (std::endian::native == std::endian::big) {
+        r = src >> 11;
+        g = src & 0x07E0;
+        b = src << 11;
+    } else {
+        r = src << 5 & 0x1F00;
+        g = src & 0xE007;
+        b = src >> 5 & 0x00F8;
+    }
+    PackedColor dst;
+    *(uint16_t *)dst.b = (r | g | b);
+    return dst;
+}
+
 
 #if 0 /* old non-template version */
 

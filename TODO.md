@@ -1,5 +1,6 @@
 # To Do
 
+
 ## Bugs
 
 &#x2705; Fix the quick hacks in spi_display.cpp that change PASET
@@ -9,6 +10,18 @@ and CASET commands
 
 Either fix async memcpy or create a low-priority task to copy
 frames.  (How fast can it run without interfering with SPI?)
+
+ - Hmmm.  It's currently taking 17 msec to copy an image.  That's
+   a little longer than the 60 Hz frame rate I'd like to run at.
+   So if I dedicated a whole core...  or else I get the vector unit
+   vectoring...
+
+ - &#x2705; first I'll try writing the swizzling code directly.  It might
+   just be that the compiler can't optimize the nonsense I wrote.
+   I can specialize on the exact source and destination formats needed.
+
+ - better is to parameterize the build so the images on flash have
+   the order the screen needs.
 
 ## Cleanup
 
@@ -27,6 +40,7 @@ Break stuff into separate modules.
 Find out why PSRAM isn't working on the 1.28 board
 
 And so much more...
+
 
 ## Features
 

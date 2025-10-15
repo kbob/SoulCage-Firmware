@@ -1,21 +1,28 @@
-#include "main/include/packed_color.h"
 
 #include <cassert>
 #include <cstdio>
 
-typedef PackedColorEE<EOrder::RGB565, PixelEndian::BIG> rgb_big;
-typedef PackedColorEE<EOrder::BGR565, PixelEndian::BIG> bgr_big;
+#include "../main/include/packed_color.h"
+
+typedef PackedColorEE<EOrder::RGB565, PixelEndian::BIG> rgb_be;
+typedef PackedColorEE<EOrder::BGR565, PixelEndian::BIG> bgr_be;
+
+template <EOrder O, PixelEndian E>
+bool operator != (const PackedColorEE<O, E>& left, const PackedColorEE<O, E>& right)
+{
+    return left.b[0] != right.b[0] || left.b[1] != right.b[1];
+}
 
 int main()
 {
     for (int red8 = 0; red8 < 256; red8 += 256 / 32) {
-        uint16_t c = rgb_big::rgb565(red8, 0, 0);
+        uint16_t c = rgb_be::rgb565(red8, 0, 0);
         // printf("rgb(%d) = %#x\n", red8, c);
         assert(c == red8 << 8);
     }
 
     for (int red8 = 0; red8 < 256; red8 += 256 / 32) {
-        auto c = rgb_big(red8, 0, 0);
+        auto c = rgb_be(red8, 0, 0);
         // printf("rgb(%d) = %#x = [%02x %02x] = (%d %d %d)\n",
         //        red8,
         //        c.color(),
@@ -30,7 +37,7 @@ int main()
     }
 
     for (int green8 = 0; green8 < 256; green8 += 256 / 64) {
-        auto c = rgb_big(0, green8, 0);
+        auto c = rgb_be(0, green8, 0);
         // printf("rgb(%d) = %#x = (%d %d %d)\n", green8, c.color(), c.red5(), c.green6(), c.blue5());
         assert(c.color() == green8 << (5 - 2));
         assert(c.red5() == 0);
@@ -39,7 +46,7 @@ int main()
     }
 
     for (int blue8 = 0; blue8 < 256; blue8 += 256 / 32) {
-        auto c = rgb_big(0, 0, blue8);
+        auto c = rgb_be(0, 0, blue8);
         // printf("rgb(%d) = %#x = (%d %d %d)\n", blue8, c.color(), c.red5(), c.green6(), c.blue5());
         assert(c.color() == blue8 >> 3);
         assert(c.red5() == 0);
@@ -48,8 +55,8 @@ int main()
     }
 
     for (int red8 = 0; red8 < 256; red8 += 256 / 32) {
-        auto rgb = rgb_big(red8, 0, 0);
-        bgr_big bgr = bgr_big::from_PackedColor(rgb);
+        auto rgb = rgb_be(red8, 0, 0);
+        bgr_be bgr = bgr_be::from_PackedColor(rgb);
         // printf("red %u -> %#x\n", red8, bgr.color());
         assert(bgr.color() == red8 >> 3);
         assert(bgr.red5() == red8 >> 3);
@@ -57,8 +64,8 @@ int main()
         assert(bgr.blue5() == 0);
     }
         for (int green8 = 0; green8 < 256; green8 += 256 / 64) {
-        auto rgb = rgb_big(0, green8, 0);
-        bgr_big bgr = bgr_big::from_PackedColor(rgb);
+        auto rgb = rgb_be(0, green8, 0);
+        bgr_be bgr = bgr_be::from_PackedColor(rgb);
         // printf("green %u -> %#x\n", green8, bgr.color());
         assert(bgr.color() == green8 << (5 - 2));
         assert(bgr.red5() == 0);
@@ -66,8 +73,8 @@ int main()
         assert(bgr.blue5() == 0);
     }
     for (int blue8 = 0; blue8 < 256; blue8 += 256 / 32) {
-        auto rgb = rgb_big(0, 0, blue8);
-        bgr_big bgr = bgr_big::from_PackedColor(rgb);
+        auto rgb = rgb_be(0, 0, blue8);
+        bgr_be bgr = bgr_be::from_PackedColor(rgb);
         // printf("blue %u -> %#x\n", blue8, bgr.color());
         assert(bgr.color() == blue8 << 8);
         assert(bgr.red5() == 0);
@@ -75,5 +82,20 @@ int main()
         assert(bgr.blue5() == blue8 >> 3);
     }
 
+
+    for (int red8 = 0; red8 < 256; red8 += 256 / 32) {
+        for (int green8 = 0; green8 < 256; green8 += 256 / 64) {
+            for (int blue8 = 0; blue8 < 256; blue8 += 256 / 32) {
+                const rgb_be src(red8, green8, blue8);
+                const bgr_be expected(red8, green8, blue8);
+                bgr_be actual = bgr_be::from_PackedColor(src);
+                if (actual != expected) {
+                    printf("different\n");
+                }
+            }
+        }
+    }
+
+    printf("OK\n");
     return 0;
 }
