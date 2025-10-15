@@ -10,31 +10,17 @@
 #include "esp_partition.h"
 #include "esp_random.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
 
 // Project headers
 
 // Component headers
 #include "flash_image.h"
-#include "memory_dma.h"
 #include "spi_display.h"
 
 
 #define STATIC_FEATURE 1
 #define FLICKER_FEATURE 1
-
-// swiz - swap bytes
-static constexpr uint16_t swiz(uint16_t n) { return n << 8 | (n >> 8 & 0xFF); }
-
-// rgb565 - pack 8 bit colors into an rgb565 pixel
-static constexpr uint16_t rgb565(uint8_t red8, uint8_t blue8, uint8_t green8)
-{
-    return ((red8 & 0xF8) << 8) | ((green8 & 0xFC) << 3) | (blue8 >> 3);
-}
-
-// grey565 - convert 8 bit greyscale to rgb565 format
-static constexpr uint16_t grey565(uint8_t grey8) {
-    return rgb565(grey8, grey8, grey8);
-}
 
 #undef BENCHMARK_DMA
 
@@ -315,25 +301,35 @@ FlashImage *current_image;
 size_t image_frames;
 size_t current_frame;
 const size_t IMAGE_BUFFER_COUNT = 2;
-FlashImage::pixel_type DMA_ATTR image_buffers[IMAGE_BUFFER_COUNT][FlashImage::IMAGE_HEIGHT][FlashImage::IMAGE_WIDTH];
+ScreenPixelType DMA_ATTR image_buffers[IMAGE_BUFFER_COUNT][FlashImage::IMAGE_HEIGHT][FlashImage::IMAGE_WIDTH];
 size_t current_image_buffer;
+
+void copy_image_to_screen_pixels(ScreenPixelType *dst, const FlashImage::pixel_type *src, size_t count)
+{
+    for (size_t i = 0; i < count; i++) {
+        dst[i] = ScreenPixelType::from_PackedColor(src[i]);
+    }
+}
 
 void init_flash_images()
 {
     current_image = FlashImage::get_by_label("Intro");
     assert(current_image != nullptr);
     image_frames = current_image->frame_count();
-    void *dst = (void *)&image_buffers[current_image_buffer];
-    void *src = (void *)current_image->frame_addr(current_frame);
+
+    int64_t before = esp_timer_get_time();
+
+    auto *dst = *image_buffers[current_image_buffer];
+    const auto *src = current_image->frame_addr(current_frame);
     assert(dst);
     assert(src);
-    size_t size = FlashImage::FRAME_SIZE;
-    int64_t before = esp_timer_get_time();
-    // MemoryDMA::async_memcpy(dst, src, size, xTaskGetCurrentTaskHandle());
-    std::memcpy(dst, src, size);
+    size_t pixel_count = FlashImage::FRAME_PIXEL_COUNT;
+    copy_image_to_screen_pixels(dst, src, pixel_count);
+
     int64_t after = esp_timer_get_time();
     int32_t dt_usec = after - before;
     printf("memcpy in %ld usec\n", dt_usec);
+
     current_frame = (current_frame + 1) % image_frames;
 }
 
@@ -383,12 +379,12 @@ void update_animation()
 
     // printf("update animation frame %zu\n", current_frame);
     size_t next_i_buf = (current_image_buffer + 1) % IMAGE_BUFFER_COUNT;
-    void *dst = (void *)&image_buffers[next_i_buf];
-    void *src = (void *)current_image->frame_addr(current_frame);
-    size_t size = FlashImage::FRAME_SIZE;
-    assert(size == 240 * 240 * 2);
-    // MemoryDMA::async_memcpy(dst, src, size, xTaskGetCurrentTaskHandle());
-    std::memcpy(dst, src, size);
+    auto *dst = *image_buffers[next_i_buf];
+    const auto *src = current_image->frame_addr(current_frame);
+    assert(dst);
+    assert(src);
+    size_t pixel_count = FlashImage::FRAME_PIXEL_COUNT;
+    copy_image_to_screen_pixels(dst, src, pixel_count);
     current_image_buffer = next_i_buf;
 
     current_frame = (current_frame + 1) % image_frames;
@@ -436,7 +432,7 @@ void update_animation()
 
 SPIDisplay *the_display;
 TransactionID last_SPI_trans;
-FlashImage::pixel_type DMA_ATTR black_stripe[FlashImage::IMAGE_WIDTH];
+ScreenPixelType DMA_ATTR black_stripe[FlashImage::IMAGE_WIDTH];
 const size_t STRIPE_HEIGHT = 8;
 
 void init_SPI_display()
@@ -459,19 +455,19 @@ void init_SPI_display()
 #ifdef STATIC_FEATURE
 
     const size_t STATIC_STRIPE_COUNT = 6;
-    uint16_t DMA_ATTR static_stripes[STATIC_STRIPE_COUNT][STRIPE_HEIGHT][240];
+    ScreenPixelType DMA_ATTR static_stripes[STATIC_STRIPE_COUNT][STRIPE_HEIGHT][240];
     size_t static_rotor;
 
     void send_static_stripe(size_t y) {
         // std::srand(1);
-        uint16_t *stripe = *static_stripes[static_rotor];
+        ScreenPixelType *stripe = *static_stripes[static_rotor];
         static_rotor = (static_rotor + 1) % STATIC_STRIPE_COUNT;
         for (size_t i = 0; i < STRIPE_HEIGHT * 240; i += 4) {
             int x = std::rand();
-            stripe[i + 0] = swiz(grey565(x >> 0 & 0xFF));
-            stripe[i + 1] = swiz(grey565(x >> 8 & 0xFF));
-            stripe[i + 2] = swiz(grey565(x >> 16 & 0xFF));
-            stripe[i + 3] = swiz(grey565(x >> 23 & 0xFF)); // rand returns 0..0x7FFF'FFFF;
+            stripe[i + 0] = ScreenPixelType::from_grey8(x >> 0 & 0xFF);
+            stripe[i + 1] = ScreenPixelType::from_grey8(x >> 8 & 0xFF);
+            stripe[i + 2] = ScreenPixelType::from_grey8(x >> 16 & 0xFF);
+            stripe[i + 3] = ScreenPixelType::from_grey8(x >> 23 & 0xFF);
         }
         last_SPI_trans = the_display->send_stripe(y, STRIPE_HEIGHT, stripe);
     }
@@ -480,8 +476,8 @@ void init_SPI_display()
 
 void send_image_stripe(size_t y)
 {
-    uint16_t (*frame)[240] = image_buffers[current_image_buffer];
-    uint16_t *stripe = frame[y];
+    ScreenPixelType (*frame)[240] = image_buffers[current_image_buffer];
+    ScreenPixelType *stripe = frame[y];
     last_SPI_trans = the_display->send_stripe(y, STRIPE_HEIGHT, stripe);
 }
 
@@ -536,10 +532,14 @@ extern "C" void app_main()
 }
 
 #define STRIPE_HEIGHT 8
-SPIDisplay::pixel_type blackk_stripe[STRIPE_HEIGHT][240];
-SPIDisplay::pixel_type red_stripe[STRIPE_HEIGHT][240];
-SPIDisplay::pixel_type blue_stripe[STRIPE_HEIGHT][240];
-SPIDisplay::pixel_type colors[3] = {swiz(0xF800), swiz(0x07E0), swiz(0x001f)};
+ScreenPixelType blackk_stripe[STRIPE_HEIGHT][240];
+ScreenPixelType red_stripe[STRIPE_HEIGHT][240];
+ScreenPixelType blue_stripe[STRIPE_HEIGHT][240];
+ScreenPixelType colors[3] = {
+    ScreenPixelType(0xFF, 0, 0),
+    ScreenPixelType(0, 0xFF, 0),
+    ScreenPixelType(0, 0, 0xFF),
+};
 
 // extern "C" void app_main()
 extern "C" void the_function_formerly_known_as_app_main()
@@ -584,7 +584,7 @@ extern "C" void the_function_formerly_known_as_app_main()
 
         int64_t next = esp_timer_get_time() + 16666;
         for (int frame = 0; 1; frame++) {
-            uint16_t *stripe = (frame & 1) ? *blackk_stripe : *red_stripe;
+            ScreenPixelType *stripe = (frame & 1) ? *blackk_stripe : *red_stripe;
 
             the_display.begin_frame_centered(240, 240);
             for (size_t y = 0; y < 240; y += STRIPE_HEIGHT) {

@@ -396,12 +396,12 @@ static void init_LCD(Display& disp)
 	spi_write_command(disp, 0x01); // Software Reset
 	delay_msec(150);
 
-  spi_write_command(disp, 0xEF);
+  spi_write_command(disp, 0xEF);    // inter register enable2
   spi_write_command(disp, 0xEB);
   spi_write_data_byte(disp, 0x14);
 
-  spi_write_command(disp, 0xFE);
-  spi_write_command(disp, 0xEF);
+  spi_write_command(disp, 0xFE);    // inter register enable1
+  spi_write_command(disp, 0xEF);    // inter register enable2
 
   spi_write_command(disp, 0xEB);
   spi_write_data_byte(disp, 0x14);
@@ -442,11 +442,11 @@ static void init_LCD(Display& disp)
   spi_write_command(disp, 0x8F);
   spi_write_data_byte(disp, 0xFF);
 
-  spi_write_command(disp, 0xB6);
+  spi_write_command(disp, 0xB6);    // display function control
   spi_write_data_byte(disp, 0x00);
   spi_write_data_byte(disp, 0x20);
 
-  spi_write_command(disp, 0x3A);
+  spi_write_command(disp, 0x3A);    // COLMOD
   spi_write_data_byte(disp, 0x05);
 
   spi_write_command(disp, 0x90);
@@ -466,12 +466,12 @@ static void init_LCD(Display& disp)
   spi_write_data_byte(disp, 0x01);
   spi_write_data_byte(disp, 0x04);
 
-  spi_write_command(disp, 0xC3);
+  spi_write_command(disp, 0xC3);    // power control 2
   spi_write_data_byte(disp, 0x13);
-  spi_write_command(disp, 0xC4);
+  spi_write_command(disp, 0xC4);    // power control 3
   spi_write_data_byte(disp, 0x13);
 
-  spi_write_command(disp, 0xC9);
+  spi_write_command(disp, 0xC9);    // power control 4
   spi_write_data_byte(disp, 0x22);
 
   spi_write_command(disp, 0xBE);
@@ -486,7 +486,7 @@ static void init_LCD(Display& disp)
   spi_write_data_byte(disp, 0x0c);
   spi_write_data_byte(disp, 0x02);
 
-  spi_write_command(disp, 0xF0);
+  spi_write_command(disp, 0xF0);    // SET_GAMMA1
   spi_write_data_byte(disp, 0x45);
   spi_write_data_byte(disp, 0x09);
   spi_write_data_byte(disp, 0x08);
@@ -494,7 +494,7 @@ static void init_LCD(Display& disp)
   spi_write_data_byte(disp, 0x26);
   spi_write_data_byte(disp, 0x2A);
 
-  spi_write_command(disp, 0xF1);
+  spi_write_command(disp, 0xF1);    // SET_GAMMA2
   spi_write_data_byte(disp, 0x43);
   spi_write_data_byte(disp, 0x70);
   spi_write_data_byte(disp, 0x72);
@@ -502,7 +502,7 @@ static void init_LCD(Display& disp)
   spi_write_data_byte(disp, 0x37);
   spi_write_data_byte(disp, 0x6F);
 
-  spi_write_command(disp, 0xF2);
+  spi_write_command(disp, 0xF2);    // SET_GAMMA3
   spi_write_data_byte(disp, 0x45);
   spi_write_data_byte(disp, 0x09);
   spi_write_data_byte(disp, 0x08);
@@ -510,7 +510,7 @@ static void init_LCD(Display& disp)
   spi_write_data_byte(disp, 0x26);
   spi_write_data_byte(disp, 0x2A);
 
-  spi_write_command(disp, 0xF3);
+  spi_write_command(disp, 0xF3);    // SET_GAMMA4
   spi_write_data_byte(disp, 0x43);
   spi_write_data_byte(disp, 0x70);
   spi_write_data_byte(disp, 0x72);
@@ -616,12 +616,12 @@ static void init_LCD(Display& disp)
   spi_write_data_byte(disp, 0x3e);
   spi_write_data_byte(disp, 0x07);
 
-  spi_write_command(disp, 0x35);
-  spi_write_command(disp, 0x21);
+  spi_write_command(disp, 0x35);    // tearing effect line on
+  spi_write_command(disp, 0x21);    // display inversion on
 
-  spi_write_command(disp, 0x11);
+  spi_write_command(disp, 0x11);    // sleep out mode
   delay_msec(120);
-  spi_write_command(disp, 0x29);
+  spi_write_command(disp, 0x29);    // display on
   delay_msec(20);
 }
 
@@ -772,7 +772,7 @@ struct Transaction {
 Transaction Transaction::s_pool[TRANSACTION_POOL_COUNT];
 size_t Transaction::s_idle_rotor;
 
-TransactionID SPIDisplay::send_stripe(size_t y, size_t height, pixel_type *pixels)
+TransactionID SPIDisplay::send_stripe(size_t y, size_t height, ScreenPixelType *pixels)
 {
     // printf("send_stripe\n");
     assert(m_in_frame);

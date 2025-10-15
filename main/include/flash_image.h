@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include "packed_color.h"
 
 class FlashImage {
 
@@ -11,7 +12,7 @@ public:
     static const size_t IMAGE_HEIGHT = 240; // XXX get these from config
     static const size_t IMAGE_WIDTH = 240;
     static const size_t FRAME_PIXEL_COUNT = IMAGE_HEIGHT * IMAGE_WIDTH;
-    typedef uint16_t pixel_type;
+    typedef PackedColorEE<EOrder::RGB565, PixelEndian::BIG> pixel_type;
 
     static const size_t MAX_LABEL_SIZE = 16;
     static const size_t FRAME_SIZE = (240 * 240 * 2); // XXX parameterize this

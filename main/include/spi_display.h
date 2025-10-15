@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "board_defs.h"
 
 struct Display;
 typedef int32_t TransactionID;
@@ -18,7 +19,6 @@ public:
 
     size_t height() const;
     size_t width() const;
-    typedef uint16_t pixel_type;
 
     // To stream video, call begin_frame, call send_stripe with
     // whatever size stripes you want, then call end_frame.
@@ -31,7 +31,7 @@ public:
     void begin_frame(size_t width, size_t height, 
                      size_t x_offset, size_t y_offset);
     void end_frame();
-    TransactionID send_stripe(size_t y, size_t height, pixel_type *pixels);
+    TransactionID send_stripe(size_t y, size_t height, ScreenPixelType *pixels);
     void await_transaction(TransactionID);
 
 private:

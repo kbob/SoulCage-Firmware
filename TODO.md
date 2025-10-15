@@ -5,7 +5,7 @@
 &#x2705; Fix the quick hacks in spi_display.cpp that change PASET
 and CASET commands
 
-Fix pixel format on 1.28 board (GC9A01)
+&#x2705; Fix pixel format on 1.28 board (GC9A01)
 
 Either fix async memcpy or create a low-priority task to copy
 frames.  (How fast can it run without interfering with SPI?)
