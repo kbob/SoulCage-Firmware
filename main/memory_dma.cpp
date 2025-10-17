@@ -4,7 +4,12 @@ MemoryDMA MemoryDMA::the_instance;
 
 MemoryDMA::MemoryDMA()
 {
-    const async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    // const async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    async_memcpy_config_t config = {};
+    config.backlog = 8;
+    config.dma_burst_size = 16;
+    config.flags = 0;
+
     // config.dma_burst_size = 16;
 
     // async_memcpy_handle_t mcp_dummy;
