@@ -37,6 +37,27 @@ def validate(frames):
     assert all(len(f[1]) == EXPECTED_PIXELS for f in frames)
 
 
+def reformat(frames, format):
+    reformatted_frames = []
+    for (fno, pixels) in frames:
+        if format == 'rgb565':
+            npixels = pixels
+        elif format == 'bgr565':
+            npixels = []
+            for p in pixels:
+                r = p >> 11 & 0x1F;
+                g = p & 0x07E0;
+                b = p & 0x1F;
+                np = b << 11 | g | r
+                # if r != b:
+                #     print(f'{p=:04x} {r=:04x} {g=:04x} {b=:04x} {np=:04x}')
+                npixels.append(np)
+        else:
+            assert False, f'unknown pixel format {format}'
+        reformatted_frames.append((fno, npixels))
+    return reformatted_frames
+
+
 def gen_binary(frames, little_endian, pad_size):
 
     def frame_msbs(frame):
@@ -80,7 +101,10 @@ def parse_args(args):
     endians = ap.add_mutually_exclusive_group()
     endians.add_argument('-B', '--big-endian', action='store_true')
     endians.add_argument('-l', '--little-endian', action='store_true')
+    formats = ['rgb565', 'bgr565']  # add more later
+    ap.add_argument('-f', '--format', choices=formats, default='rgb565')
     ns = ap.parse_args(args)
+
     # print(f'{ns = }')
     return ns
 
@@ -88,6 +112,7 @@ def parse_args(args):
 args = parse_args(sys.argv[1:])
 frames = parse_header(args.file)
 validate(frames)
+frames = reformat(frames, args.format)
 # big endian is the default.  So only look at little_endian.
 binary = gen_binary(frames, args.little_endian, args.padding)
 write_binary(args.output[0], binary)
