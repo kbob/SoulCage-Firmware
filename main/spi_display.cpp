@@ -658,7 +658,8 @@ void SPIDisplay::begin_frame_centered(size_t width, size_t height)
     assert(height <= d_height);
     size_t x_offset = (d_width - width) / 2;
     size_t y_offset = (d_height - height) / 2;
-    assert(width == 240 && height == 240 && x_offset == 0 && y_offset == 0);
+    // Only valid for ws-128 board
+    // assert(width == 240 && height == 240 && x_offset == 0 && y_offset == 0);
     begin_frame(width, height, x_offset, y_offset);
 }
 
