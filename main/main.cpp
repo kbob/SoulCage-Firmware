@@ -13,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 
 // Project headers
+#include "sdkconfig.h"
 
 // Component headers
 #include "flash_image.h"
@@ -98,14 +99,15 @@
 
 static void identify_board()
 {
-    #ifdef WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
+#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
     printf("This is the Waveshare 1.69 board!\n");
-#elif defined(WAVESHARE_ESP32_S3_LCD_1_28)
+#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
     printf("This is the Waveshare 1.28 board!\n");
 #else
     printf("Is this an unknown board?");
+#error "unknown board"
 #endif
-    printf("board = \"%s\"\n", BOARD);
+    printf("board = \"%s\"\n", board_name);
     printf("\n");
 }
 
@@ -152,9 +154,9 @@ void wait_for_tick()
     (void)ulTaskNotifyTakeIndexed(index, clear_count, timeout);
 }
 
-#ifdef WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
+#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
     const gpio_num_t BACKLIGHT_GPIO = GPIO_NUM_15;
-#elif defined(WAVESHARE_ESP32_S3_LCD_1_28)
+#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
     const gpio_num_t BACKLIGHT_GPIO = GPIO_NUM_40;
 #else
     #error "unknown board - backlight GPIO not defined"
@@ -545,14 +547,15 @@ ScreenPixelType colors[3] = {
 extern "C" void the_function_formerly_known_as_app_main()
 {
     printf("app_main\n");
-#ifdef WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
+#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
     printf("This is the Waveshare 1.69 board!\n");
-#elif defined(WAVESHARE_ESP32_S3_LCD_1_28)
+#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
     printf("This is the Waveshare 1.28 board!\n");
 #else
+    #error "no board?"
     printf("Is this an unknown board?");
 #endif
-    printf("board = \"%s\"\n", BOARD);
+    printf("board = \"%s\"\n", board_name);
     printf("\n");
 
     // Backlight the_backlight;

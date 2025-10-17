@@ -80,7 +80,7 @@ struct Display {
 };
 
 // Board definitions.  Extend as needed.
-#ifdef WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
+#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
 
 static Display displays[] = {
     [0] = {
@@ -101,7 +101,7 @@ static Display displays[] = {
     },
 };
 
-#elif defined(WAVESHARE_ESP32_S3_LCD_1_28)
+#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
 
 // GC9A01
 
@@ -350,7 +350,7 @@ static spi_transaction_t *spi_await_transaction(Display& disp)
     return trans_desc;
 }
 
-#ifdef WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
+#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
 
 static void init_LCD(Display& disp)
 {
@@ -389,7 +389,7 @@ static void init_LCD(Display& disp)
 	delay_msec(255);
 }
 
-#elif defined(WAVESHARE_ESP32_S3_LCD_1_28)
+#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
 
 static void init_LCD(Display& disp)
 {

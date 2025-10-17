@@ -40,7 +40,86 @@ Open a terminal (use WSL if you're on Windows), navigate into the `prebuilt` dir
 
 
 
+# Multi-Config
 
+## Where are we going?
+
+We should be able to do:
+
+ * `idf.py build` -- builds the default board in `./build/`
+
+ * `idf.py @profiles/[shortname] build` -- builds that board in
+ its dedicated build dir
+
+
+We should have:
+
+ - a default board in `default-board.cmake`
+
+ - `profiles/[short boardname]` with CMake options
+
+ - `main/Kconfig.projbuild` should define CONFIG_BOARD_NAME option.
+
+Per-board, we need to create:
+
+ - Pick a `shortname`.  Shell-friendly, unique, easy to type.
+   E.g., `ws-128`, `ws-t169`.
+
+ - Pick a `boardname`.  Shell-friendly, complete product name.
+   E.g., `waveshare-esp32-s3-lcd-1.28`.
+
+ - Pick a `configname`.  Legal C identifier, uppercase.
+   Transliterate `boardname` to uppercase and change punctuation
+   to "\_".  It will have `BOARD_` prepended.
+   E.g., `BOARD_WAVESHARE_ESP32_S3_LCD_1_28`.
+
+   N.B., in some contexts, the build system prepends `CONFIG_`
+   to the configname.
+   E.g., `CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28`.
+
+ - Define [builddir] as `build/[shortname]`.
+   E.g., `build/ws-128`.
+
+ - ~~`config/sdkconfig.board.[boardname]`~~
+   `boards/sdkconfig.[boardname]`
+   sdkconfig parameters specific to this board.  There will be a
+   lot of duplication between boards.  This file should define
+   `CONFIG_[configname]` and `CONFIG_IDF_TARGET`.
+
+ - `profiles/[shortname]` is an [idf.py options file](https://docs.espressif.com/projects/esp-idf/en/v5.5.1/esp32s3/api-guides/tools/idf-py.html#global-options).
+   It should define:
+    + `-B [builddir]`
+    + `-DSDKCONFIG=[builddir]/sdkconfig`
+    + ~~`SDKCONFIG_DEFAULTS=sdkconfig.defaults;config/sdkconfig.board.[boardname]`~~
+    + `SDKCONFIG_DEFAULTS=sdkconfig.defaults;boards/config/sdkconfig.[boardname]`
+
+ - Add `[configname]` to board list in `main/Kconfig.projbuild`.
+
+ - Add definitions to `main/include/board_defs.h`.  This is a large
+   and ever-changing list of requirements.
+
+"Shell friendly" means good for use in a shell or filename:
+
+ - no whitespace
+ - no punctuation characters with meaning to a shell (&lt; &gt; ~ etc.)
+ - alphanumeric characters are okay.
+ - "-", "\_", "." are okay.  Prefer "-" to "\_".
+
+
+
+## How do we get there?
+
+`CMakeLists.txt` has a default sdkconfig path
+`config/sdkconfig.default_board;c*/s*g.esp32s3;c*/s*g.defaults`
+
+
+
+
+Per-board, we have:
+ - an idf.py profile `profiles/[shortname]`
+ - an `sdk.[boardname]`
+ - definitions in `main/include/board_defs.h`
+ - a
 
 # More Needed
 

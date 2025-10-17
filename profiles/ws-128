@@ -1,0 +1,4 @@
+-B build/ws-128
+-D IDF_TARGET=esp32s3
+-D SDKCONFIG=build/ws-128/sdkconfig
+-D board_config="boards/sdkconfig.waveshare-esp32-s3-lcd-1.28"

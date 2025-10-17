@@ -1,23 +1,17 @@
 cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+include(default-board.cmake)
 
-# Change the target board here.  Edit or uncomment all three lines.
-# set(board "waveshare-esp32-s3-lcd-touch-1.69")
-# idf_build_set_property(COMPILE_DEFINITIONS
-#     WAVESHARE_ESP32_S3_LCD_TOUCH_1_69=y APPEND)
+# sdkconfig files are evaluated left to right.  The last definition
+# of a variable wins.
 
-set(board "waveshare-esp32-s3-lcd-1.28")
-idf_build_set_property(COMPILE_DEFINITIONS
-    WAVESHARE_ESP32_S3_LCD_1_28=y APPEND)
+if ("${board_config}" STREQUAL "")
+    set(board_config "${default_board_config}")
+endif()
 
-idf_build_set_property(COMPILE_DEFINITIONS "BOARD=\"${board}\"" APPEND)
-# message("cdefs: ${COMPILE_DEFINITIONS}")
+set(SDKCONFIG_DEFAULTS "sdkconfig.defaults;${board_config}")
 
-set(SDKCONFIG_DEFAULTS
-    sdkconfig.${board}
-    sdkconfig.defaults.esp32s3
-    sdkconfig.defaults)
 set(COMPONENTS main partition_table custom)
 
 project(SoulCage)

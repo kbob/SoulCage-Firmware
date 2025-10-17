@@ -1,0 +1,4 @@
+-B build/ws-t169
+-D IDF_TARGET=esp32s3
+-D SDKCONFIG=build/ws-t169/sdkconfig
+-D board_config="boards/sdkconfig.waveshare-esp32-s3-lcd-touch-1.69"
