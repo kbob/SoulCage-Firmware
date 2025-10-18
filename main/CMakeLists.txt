@@ -4,7 +4,9 @@ FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/main/*.*)
 # )
 
 set(priv_requirements
-    driver
+    esp_driver_gpio
+    esp_driver_ledc
+    esp_driver_spi
     esp_hw_support
     esp_partition
     esp_psram

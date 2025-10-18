@@ -1,5 +1,9 @@
 # To Do
 
+<!--
+Green check: &#x2705;
+Red X:       &#x274c;
+-->
 
 ## Bugs
 
@@ -25,7 +29,7 @@ frames.  (How fast can it run without interfering with SPI?)
 
 ## Cleanup
 
-In main/CMakeLists.txt, change driver to list of drivers actually used.
+&#x2705; In `main/CMakeLists.txt`, change driver to list of drivers actually used.
 
 Remove hardcoded constants everywhere.  Have one set of constants
 for screen resolution and for image size.
