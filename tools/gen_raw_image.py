@@ -46,14 +46,12 @@ def reformat(frames, format):
             npixels = []
             for p in pixels:
                 r = p >> 11 & 0x1F;
-                g = p & 0x07E0;
+                g = p >> 5 & 0x3F;
                 b = p & 0x1F;
-                np = b << 11 | g | r
-                # if r != b:
-                #     print(f'{p=:04x} {r=:04x} {g=:04x} {b=:04x} {np=:04x}')
+                np = b << 11 | g << 5 | r
                 npixels.append(np)
         else:
-            assert False, f'unknown pixel format {format}'
+            assert False, f'unimplemented pixel format {format}'
         reformatted_frames.append((fno, npixels))
     return reformatted_frames
 

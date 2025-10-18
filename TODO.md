@@ -20,7 +20,7 @@ frames.  (How fast can it run without interfering with SPI?)
    just be that the compiler can't optimize the nonsense I wrote.
    I can specialize on the exact source and destination formats needed.
 
- - better is to parameterize the build so the images on flash have
+ - &#x2705; better is to parameterize the build so the images on flash have
    the order the screen needs.
 
 ## Cleanup
@@ -39,7 +39,7 @@ Break stuff into separate modules.
   * image update
   * break spi_display into 3 or 4 modules
 
-Find out why PSRAM isn't working on the 1.28 board
+&#x2705; Find out why PSRAM isn't working on the 1.28 board
 
 And so much more...
 

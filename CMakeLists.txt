@@ -24,24 +24,27 @@ set(soul_f_file ${build_dir}/soul_f.bin)
 set(soul_m_file ${build_dir}/soul_m.bin)
 
 add_custom_command(OUTPUT ${Intro_file}
-    COMMAND echo "Here we go ${Intro_file}"
+    COMMAND echo "Flashing ${Intro_file}"
     COMMAND ${python}
     ${PROJECT_DIR}/tools/gen_raw_image.py
-        -o ${Intro_file}
+        --output=${Intro_file}
+        --format=${CONFIG_SCREEN_PIXEL_FORMAT}
         ${PROJECT_DIR}/images/Intro.h)
 
 add_custom_command(OUTPUT ${soul_f_file}
     COMMAND echo "Flashing ${soul_f_file}"
     COMMAND ${python}
     ${PROJECT_DIR}/tools/gen_raw_image.py
-        -o ${soul_f_file}
+        --output=${soul_f_file}
+        --format=${CONFIG_SCREEN_PIXEL_FORMAT}
         ${PROJECT_DIR}/images/soul_f.h)
 
 add_custom_command(OUTPUT ${soul_m_file}
-    COMMAND echo "Here we go ${soul_m_file}"
+    COMMAND echo "Flashing ${soul_m_file}"
     COMMAND ${python}
     ${PROJECT_DIR}/tools/gen_raw_image.py
-        -o ${soul_m_file}
+        --output=${soul_m_file}
+        --format=${CONFIG_SCREEN_PIXEL_FORMAT}
         ${PROJECT_DIR}/images/soul_m.h)
 
 add_custom_target(Intro_bin ALL DEPENDS ${Intro_file})

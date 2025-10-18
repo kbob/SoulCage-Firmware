@@ -11,6 +11,34 @@ menu "SoulCage Product Configuration"
             bool "Waveshare ESP32_S3_LCD_1_28 (no touch)"
     endchoice
 
+    choice SCREEN_PIXEL_FORMAT
+        prompt "Pixel format"
+        help
+            Screen pixel format
+        
+        config SCREEN_PIXEL_RGB565
+            bool "RGB565"
+        config SCREEN_PIXEL_BGR565
+            bool "BGR565"
+        config SCREEN_PIXEL_BRG565
+            bool "BRG565"
+        config SCREEN_PIXEL_GBR565
+            bool "GBR565"
+        config SCREEN_PIXEL_GRB565
+            bool "GRB565"
+        config SCREEN_PIXEL_RBG565
+            bool "RBG565"
+    endchoice
+
+    config SCREEN_PIXEL_FORMAT
+        string
+        default "bgr565" if SCREEN_PIXEL_BGR565
+        default "brg565" if SCREEN_PIXEL_BRG565
+        default "gbr565" if SCREEN_PIXEL_GBR565
+        default "grb565" if SCREEN_PIXEL_GRB565
+        default "rbg565" if SCREEN_PIXEL_RBG565
+        default "rgb565" if SCREEN_PIXEL_RGB565
+
     # config EXAMPLE_PRODUCT_NAME
     #     string "Product name"
     #     default "Not set"

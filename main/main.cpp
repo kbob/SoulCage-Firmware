@@ -306,31 +306,20 @@ const size_t IMAGE_BUFFER_COUNT = 2;
 ScreenPixelType DMA_ATTR image_buffers[IMAGE_BUFFER_COUNT][FlashImage::IMAGE_HEIGHT][FlashImage::IMAGE_WIDTH];
 size_t current_image_buffer;
 
-void copy_image_to_screen_pixels(ScreenPixelType *dst, const FlashImage::pixel_type *src, size_t count)
-{
-    for (size_t i = 0; i < count; i++) {
-        dst[i] = ScreenPixelType::from_PackedColor(src[i]);
-    }
-}
-
 void init_flash_images()
 {
     current_image = FlashImage::get_by_label("Intro");
     assert(current_image != nullptr);
     image_frames = current_image->frame_count();
 
-    int64_t before = esp_timer_get_time();
-
     auto *dst = *image_buffers[current_image_buffer];
     const auto *src = current_image->frame_addr(current_frame);
     assert(dst);
     assert(src);
     size_t pixel_count = FlashImage::FRAME_PIXEL_COUNT;
-    copy_image_to_screen_pixels(dst, src, pixel_count);
+    size_t size = pixel_count * sizeof (ScreenPixelType);
 
-    int64_t after = esp_timer_get_time();
-    int32_t dt_usec = after - before;
-    printf("memcpy in %ld usec\n", dt_usec);
+    std::memcpy(dst, src, size);
 
     current_frame = (current_frame + 1) % image_frames;
 }
@@ -386,7 +375,10 @@ void update_animation()
     assert(dst);
     assert(src);
     size_t pixel_count = FlashImage::FRAME_PIXEL_COUNT;
-    copy_image_to_screen_pixels(dst, src, pixel_count);
+    size_t size = pixel_count * sizeof (ScreenPixelType);
+
+    std::memcpy(dst, src, size);
+
     current_image_buffer = next_i_buf;
 
     current_frame = (current_frame + 1) % image_frames;

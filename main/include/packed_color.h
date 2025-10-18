@@ -50,11 +50,10 @@ public:
 
     // bit-swizzle a different PackedColor into our format.
     // (I wonder how well the optimizer will cope with this.)
-    template <EOrder that_eorder, PixelEndian that_endian>
-    static PackedColor
-    from_PackedColor(const PackedColorEE<that_eorder, that_endian>& that)
+    template <EOrder that_order, PixelEndian that_endian>
+    explicit PackedColorEE(const PackedColorEE<that_order, that_endian>& that)
     {
-        return PackedColor(that.red8(), that.green8(), that.blue8());
+        *this = PackedColor(that.red8(), that.green8(), that.blue8());
     }
 
     // convert to uint16_t 
@@ -138,36 +137,7 @@ public:
     }
 };
 
-// Specializations for performance
-// typedef PackedColorEE<EOrder::RGB565, PixelEndian::BIG> rgb_be;
-// typedef PackedColorEE<EOrder::BGR565, PixelEndian::BIG> bgr_be;
-
-template <>
-template <>
-__inline__
-PackedColorEE<EOrder::RGB565, PixelEndian::BIG>
-PackedColorEE<EOrder::RGB565, PixelEndian::BIG>::from_PackedColor(
-    const PackedColorEE<EOrder::RGB565, PixelEndian::BIG>& that
-) {
-    uint16_t src = *(const uint16_t *) that.b;
-    uint16_t r, g, b;
-    if constexpr (std::endian::native == std::endian::big) {
-        r = src >> 11;
-        g = src & 0x07E0;
-        b = src << 11;
-    } else {
-        r = src << 5 & 0x1F00;
-        g = src & 0xE007;
-        b = src >> 5 & 0x00F8;
-    }
-    PackedColor dst;
-    *(uint16_t *)dst.b = (r | g | b);
-    return dst;
-}
-
-
 #if 0 /* old non-template version */
-
 
 struct PackedColor {
     uint8_t b[2];
