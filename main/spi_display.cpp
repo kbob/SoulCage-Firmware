@@ -3,6 +3,7 @@
 
 // C++ standard headers
 #include <cassert>
+#include <climits>
 #include <cstring>
 
 // ESP-IDF headers
@@ -224,6 +225,14 @@ static void init_display_SPI(Display &display)
     ESP_ERROR_CHECK(
         spi_bus_add_device(desc.spi_host, &dev_config, &dev_handle)
     );
+
+    size_t max_bytes;
+    ESP_ERROR_CHECK(
+        spi_bus_get_max_transaction_len(desc.spi_host, &max_bytes)
+    );
+    printf("SPI_MAX_DMA_LEN = %d\n", SPI_MAX_DMA_LEN);
+    printf("SPI bus max transaction = %zu bytes\n", max_bytes);
+
     display.dev_handle = dev_handle;
 }
 
@@ -332,6 +341,10 @@ static void spi_enqueue_transaction(Display& disp, spi_transaction_t *trans_desc
     // const uint8_t *tb = (const uint8_t *)trans_desc->tx_buffer;
     // printf("spi_enqueue_transaction: %u bytes @ %p [%x %x %x %x...]\n",
     //     trans_desc->length, tb, tb[0], tb[1], tb[2], tb[3]);
+    if (trans_desc->length > SPI_MAX_DMA_LEN * CHAR_BIT) {
+        printf("transaction is %zu bytes\n", trans_desc->length / CHAR_BIT);
+    }
+    assert(trans_desc->length <= SPI_MAX_DMA_LEN * CHAR_BIT);
     spi_device_handle_t handle = disp.dev_handle;
     TickType_t ticks_to_wait = pdMS_TO_TICKS(1000);
     ESP_ERROR_CHECK(
