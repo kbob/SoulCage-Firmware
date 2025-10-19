@@ -4,6 +4,9 @@
 #include "esp_async_memcpy.h"
 #include "freertos/FreeRTOS.h"
 
+// Don't use this with SPI.
+// https://github.com/espressif/esp-idf/issues/10575
+// (Soul Cage uses SPI.  So don't use this.)
 
 class MemoryDMA {
 

@@ -239,6 +239,8 @@ void run_memcpy_benchmarks()
         }
     }
 
+    // Yeah, I know...  std::make_array(std::make_unique<StdMemcpy>(), ...)
+    // ... or something.  Seems worse than this.
     for (auto& algo : algorithms) { delete algo; algo = nullptr; }
     for (auto& src : sources) { delete src; src = nullptr; }
     for (auto& dest : destinations) { delete dest; dest = nullptr; }
