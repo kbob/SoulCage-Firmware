@@ -16,86 +16,20 @@
 #include "sdkconfig.h"
 
 // Component headers
+#include "benchmarks.h"
+#include "dsp_memcpy.h"
 #include "flash_image.h"
+#include "memory_dma.h"
 #include "spi_display.h"
 
 
 #define STATIC_FEATURE 1
 #define FLICKER_FEATURE 1
 
-#undef BENCHMARK_DMA
+#define TEST_LCD
+// #define RUN_BENCHMARKS
+#define PRINT_FLASH_IMAGES
 
-#ifdef BENCHMARK_DMA
-
-    #define IN_FLIGHT 4
-    #define REPS 32
-    #define BIG (240 * 240 * sizeof (uint16_t))
-    uint8_t destination[BIG];
-    uint8_t source[BIG];
-
-    static void benchmark_FLASH_DMA(const uint8_t *src, size_t count)
-    {
-        uint64_t before = esp_timer_get_time();
-        for (int i = 0; i < IN_FLIGHT; i++) {
-            MemoryDMA::async_memcpy(destination, (void *)src, BIG, NULL);
-            src += BIG;
-        }
-        for (int i = IN_FLIGHT; i < count; i++) {
-            uint32_t n = ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-            assert(n <= IN_FLIGHT);
-            MemoryDMA::async_memcpy(destination, (void *)src, BIG, NULL);
-            src += BIG;
-        }
-        for (int i = IN_FLIGHT; --i >= 0; ) {
-            uint32_t n = ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-        assert(n != 0);
-        }
-        uint64_t after = esp_timer_get_time();
-        uint64_t dt_usec = after - before;
-        uint64_t bytes = count * BIG;
-        float Bps = (float)bytes / (float)dt_usec;
-        float uspf = (float)dt_usec / (float)count;
-        float fps = 1'000'000.0f / uspf;
-
-        printf("FLASH to SRAM\n");
-        printf("    copied %llu bytes in %llu usec: %g MB/sec\n",
-               bytes, dt_usec, Bps);
-        printf("    %g usec/frame, %g fps\n", uspf, fps);
-        printf("\n");
-    }
-
-    static void benchmark_SRAM_DMA()
-    {
-        strcpy((char *)source, "Hello, World!");
-
-        uint64_t before = esp_timer_get_time();
-        for (int i = 0; i < IN_FLIGHT; i++) {
-            MemoryDMA::async_memcpy(destination, source, BIG, NULL);
-        }
-        for (int i = IN_FLIGHT; i < REPS; i++) {
-            uint32_t n = ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-            assert(n <= IN_FLIGHT);
-            MemoryDMA::async_memcpy(destination, source, BIG, NULL);
-        }
-        for (int i = IN_FLIGHT; --i >= 0; ) {
-            uint32_t n = ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-        assert(n != 0);
-        }
-        uint64_t after = esp_timer_get_time();
-        uint64_t dt_usec = after - before;
-        uint64_t bytes = REPS * BIG;
-        float Bps = (float)bytes / (float)dt_usec;
-        float uspf = (float)dt_usec / (float)REPS;
-        float fps = 1'000'000.0f / uspf;
-
-        printf("SRAM to SRAM\n");
-        printf("    copied %llu bytes in %llu usec: %g MB/sec\n",
-               bytes, dt_usec, Bps);
-        printf("    %g usec/frame, %g fps\n", uspf, fps);
-        printf("\n");
-    }
-
-#endif
 
 static void identify_board()
 {
@@ -303,7 +237,11 @@ FlashImage *current_image;
 size_t image_frames;
 size_t current_frame;
 const size_t IMAGE_BUFFER_COUNT = 2;
-ScreenPixelType DMA_ATTR image_buffers[IMAGE_BUFFER_COUNT][FlashImage::IMAGE_HEIGHT][FlashImage::IMAGE_WIDTH];
+ScreenPixelType
+    DMA_ATTR DSP_ALIGNED_ATTR
+    image_buffers[IMAGE_BUFFER_COUNT]
+                 [FlashImage::IMAGE_HEIGHT]
+                 [FlashImage::IMAGE_WIDTH];
 size_t current_image_buffer;
 
 void init_flash_images()
@@ -550,8 +488,27 @@ extern "C" void the_function_formerly_known_as_app_main()
     printf("board = \"%s\"\n", board_name);
     printf("\n");
 
+#ifdef PRINT_FLASH_IMAGES    
+    printf("Flash images found:\n");
+    for (size_t i = 0; i < FlashImage::MAX_IMAGES; i++) {
+        if (FlashImage *image = FlashImage::get_by_index(i)) {
+            printf("  \"%s\"%*s %zu bytes, %zu frames\n",
+                image->label(),
+                (int)(FlashImage::MAX_LABEL_SIZE - std::strlen(image->label())), "",
+                image->size_bytes(),image->frame_count());
+        }
+    }
+    printf("\n");
+#endif
+
+#ifdef RUN_BENCHMARKS
+    run_memcpy_benchmarks();
+#endif
+
+#ifdef TEST_LCD
     // Backlight the_backlight;
     // the_backlight.set_brightness(255);
+    init_backlight();
     const gpio_num_t BACKLIGHT_GPIO = GPIO_NUM_15;
     gpio_reset_pin(BACKLIGHT_GPIO);
     gpio_set_direction(BACKLIGHT_GPIO, GPIO_MODE_OUTPUT);
@@ -578,7 +535,8 @@ extern "C" void the_function_formerly_known_as_app_main()
         the_display.end_frame();
 
         int64_t next = esp_timer_get_time() + 16666;
-        for (int frame = 0; 1; frame++) {
+        for (int frame = 0; frame < 100; frame++) {
+            update_backlight();
             ScreenPixelType *stripe = (frame & 1) ? *blackk_stripe : *red_stripe;
 
             the_display.begin_frame_centered(240, 240);
@@ -593,37 +551,5 @@ extern "C" void the_function_formerly_known_as_app_main()
         the_display.await_transaction(id); // only wait for the last one ever
         vTaskDelay(1000); // 10 seconds
     }
-
-#ifdef PRINT_FLASH_IMAGES    
-    printf("Flash images found:\n");
-    for (size_t i = 0; i < FlashImage::MAX_IMAGES; i++) {
-        if (FlashImage *image = FlashImage::get_by_index(i)) {
-            printf("  \"%s\"%*s %zu bytes, %zu frames\n",
-                image->label(),
-                (int)(FlashImage::MAX_LABEL_SIZE - std::strlen(image->label())), "",
-                image->size_bytes(),image->frame_count());
-        }
-    }
-    printf("\n");
-#endif
-
-#ifdef BENCHMARK_DMA
-    benchmark_SRAM_DMA();
-    benchmark_FLASH_DMA((const uint8_t *)part_addrs[2], part_sizes[2] / BIG);
 #endif
 }
-
-// Update:
-// change frames every 16 ticks
-// update screen every 2 ticks
-// update backlight every 2 ticks
-// change animation:
-//     from intro after it's done
-//     between him and her when the backlight cycles (randomly)
-//
-// block at:
-//    waiting for stripes
-//    waiting for next update cycle
-//
-//
-// start with an every-tick 

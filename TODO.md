@@ -12,7 +12,7 @@ and CASET commands
 
 &#x2705; Fix pixel format on 1.28 board (GC9A01)
 
-Either fix async memcpy or create a low-priority task to copy
+&#x2705; Either fix async memcpy or create a low-priority task to copy
 frames.  (How fast can it run without interfering with SPI?)
 
  - Hmmm.  It's currently taking 17 msec to copy an image.  That's
@@ -26,6 +26,10 @@ frames.  (How fast can it run without interfering with SPI?)
 
  - &#x2705; better is to parameterize the build so the images on flash have
    the order the screen needs.
+
+ - &#x2705; I benchmarked various ways of copying from flash.  memcpy
+   is faster than DMA or copying using the DSP instructions.  It's also
+   faster than the LCD refresh rate.  So I'll just leave it.
 
 ## Cleanup
 
