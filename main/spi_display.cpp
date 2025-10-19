@@ -230,8 +230,6 @@ static void init_display_SPI(Display &display)
     ESP_ERROR_CHECK(
         spi_bus_get_max_transaction_len(desc.spi_host, &max_bytes)
     );
-    printf("SPI_MAX_DMA_LEN = %d\n", SPI_MAX_DMA_LEN);
-    printf("SPI bus max transaction = %zu bytes\n", max_bytes);
 
     display.dev_handle = dev_handle;
 }

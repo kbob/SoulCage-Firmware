@@ -8,7 +8,6 @@
 #include "driver/gpio.h"        // XXX remove me
 #include "driver/ledc.h"
 #include "esp_partition.h"
-#include "esp_random.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 
@@ -20,6 +19,7 @@
 #include "dsp_memcpy.h"
 #include "flash_image.h"
 #include "memory_dma.h"
+#include "random.h"
 #include "spi_display.h"
 
 
@@ -43,18 +43,6 @@ static void identify_board()
 #endif
     printf("board = \"%s\"\n", board_name);
     printf("\n");
-}
-
-// PRNG - pseudo-random number generator
-static void init_prng()
-{
-    std::srand(esp_random());
-}
-
-static int randint(int min, int max)
-{
-    // This PRNG is biased.  I don't care.
-    return min + std::rand() % (max - min);
 }
 
 
@@ -275,7 +263,7 @@ void maybe_change_animation()
         return;
     }
 
-    if (std::rand() % 100 < PERCENT_ANIMATION_CHANGE) {
+    if (Random::randint(0, 100) < PERCENT_ANIMATION_CHANGE) {
         auto old_label = current_image->label();
 
         // Don't interrupt the intro.
@@ -292,7 +280,7 @@ void maybe_change_animation()
         current_image = FlashImage::get_by_label(new_label);
         assert(current_image != nullptr);
         image_frames = current_image->frame_count();
-        current_frame = randint(0, image_frames);
+        current_frame = Random::randint(0, image_frames);
     }
 }
 
@@ -323,7 +311,7 @@ void update_animation()
     if (current_frame == 0 && in_intro) {
         // if we've finished the intro, start on one of the souls..
         in_intro = false;
-        const char *next_image = std::rand() % 2 ? "soul_f" : "soul_m";
+        const char *next_image = Random::rand() % 2 ? "soul_f" : "soul_m";
         current_image = FlashImage::get_by_label(next_image);
         assert(current_image != nullptr);
         image_frames = current_image->frame_count();
@@ -347,15 +335,15 @@ void update_animation()
         static int static_start = -1;
         if (static_start == -1) {
             // first time
-            static_start = randint(MIN_NO_STATIC, MAX_NO_STATIC);
+            static_start = Random::randint(MIN_NO_STATIC, MAX_NO_STATIC);
         } else if (!static_active && --static_start == 0) {
-            static_active = randint(MIN_STATIC, MAX_STATIC);
+            static_active = Random::randint(MIN_STATIC, MAX_STATIC);
         }
         if (static_active) {
             if (--static_active != 0) {
                 return true;
             }
-            static_start = randint(MIN_NO_STATIC, MAX_NO_STATIC);
+            static_start = Random::randint(MIN_NO_STATIC, MAX_NO_STATIC);
         }
         return false;
     }
@@ -391,11 +379,11 @@ void init_SPI_display()
     size_t static_rotor;
 
     void send_static_stripe(size_t y) {
-        // std::srand(1);
+        // Random::srand(1);
         ScreenPixelType *stripe = *static_stripes[static_rotor];
         static_rotor = (static_rotor + 1) % STATIC_STRIPE_COUNT;
         for (size_t i = 0; i < STRIPE_HEIGHT * 240; i += 4) {
-            int x = std::rand();
+            int x = Random::rand();
             stripe[i + 0] = ScreenPixelType::from_grey8(x >> 0 & 0xFF);
             stripe[i + 1] = ScreenPixelType::from_grey8(x >> 8 & 0xFF);
             stripe[i + 2] = ScreenPixelType::from_grey8(x >> 16 & 0xFF);
@@ -441,7 +429,7 @@ extern "C" void app_main()
     printf("app_main\n");
     identify_board();
 
-    init_prng();
+    // init_prng();
     init_flash_images();
     init_SPI_display();
     init_backlight();
