@@ -1,0 +1,52 @@
+#!/bin/sh
+
+function usage () {
+    echo "Use: `basename \"$0\"` path/to/file.cpp" >&2
+    echo ''
+    echo 'emits a command to preprocess FILE'
+    echo ''
+}
+
+if [ "$1" = --help ] || [ "$1" = -h ]
+then
+    usage
+    exit
+fi
+
+if [ $# != 1 ] ||
+   [ ! -f "$1" ] ||
+   [ "`basename \"$1\"`" = "`basename \"$1\" .cpp`" ]
+then
+    usage >&2
+    exit 1
+fi
+
+file="$1"
+newline='
+'
+
+touch "$file"
+echo '#!/bin/sh'
+echo ''
+
+idf.py --verbose app |                                                  \
+    sed -e '# Find build directory and emit a "cd" command'             \
+        -e 's/Running .* in directory \(.*\)/cd \1/p'                   \
+                                                                        \
+        -e '# Delete everything except the g++ command'                 \
+        -e "\,g++.*$file,!d"                                            \
+                                                                        \
+        -e '# Remove "[1/1234]" at beginning of line'                   \
+        -e 's,\[[0-9/]*\] ,,'                                           \
+                                                                        \
+        -e '# Remove "-o .../file.obj" argument'                        \
+        -e 's/ -o [^ ]*.cpp.obj//'                                      \
+                                                                        \
+        -e '# Change "-c" (gen obj file) to "-E" (preprocess only)"'    \
+        -e 's/ -c / -E /'                                               \
+                                                                        \
+        -e '# Break each arg into its own line for readability'         \
+        -e '#   shell changes six bslashes into three bslashes'         \
+        -e '#   sed changes two bslashes into literal bslash'           \
+        -e '#   sed changes bslash newline into literal newline'        \
+        -e "s/ / \\\\\\$newline    /g"
