@@ -1,4 +1,4 @@
-// My header
+// This file's header
 #include "spi_display.h"
 
 // C++ standard headers

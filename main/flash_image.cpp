@@ -1,4 +1,4 @@
-// my header
+// This file's header
 #include "flash_image.h"
 
 // C++ standard headers

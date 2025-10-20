@@ -40,7 +40,9 @@ for screen resolution and for image size.
 
 Break stuff into separate modules.
 
-  * buzzer
+  * &#x2705; benchmarks
+  * &#x2705; PRNG
+  * &#x2705; buzzer
   * backlight
   * packed color  (This needs to be templated on color order)
   * PRNG

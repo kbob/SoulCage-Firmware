@@ -16,6 +16,7 @@
 
 // Component headers
 #include "benchmarks.h"
+#include "driver_buzzer.h"
 #include "dsp_memcpy.h"
 #include "flash_image.h"
 #include "memory_dma.h"
@@ -45,6 +46,7 @@ static void identify_board()
     printf("\n");
 }
 
+Buzzer the_buzzer;
 
 const uint32_t BIG_TICK_PERIOD_MSEC = 20;
 TimerHandle_t big_tick_timer;

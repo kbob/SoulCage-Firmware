@@ -8,6 +8,7 @@
     const char *const board_name = "Waveshare ESP32-L3-LCD-Touch-1.69";
 
     typedef PackedColorEE<EOrder::RGB565, PixelEndian::BIG> ScreenPixelType;
+    #define BUZZER_GPIO 42
 
 #elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
 
@@ -15,6 +16,7 @@
 
     // Undocumented, this board wants pixel data in BGR order.
     typedef PackedColorEE<EOrder::BGR565, PixelEndian::BIG> ScreenPixelType;
+    #define BUZZER_GPIO (-1)
 
 #else
 
