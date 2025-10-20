@@ -18,6 +18,7 @@
 #include "driver_buzzer.h"
 #include "dsp_memcpy.h"
 #include "flash_image.h"
+#include "flicker_effect.h"
 #include "memory_dma.h"
 #include "random.h"
 #include "spi_display.h"
@@ -26,18 +27,28 @@
 // App Level Feature Flags
 
 #define STATIC_FEATURE 1
-#define FLICKER_FEATURE 1
 
 #define TEST_LCD
 // #define RUN_BENCHMARKS
 #define PRINT_FLASH_IMAGES
 
+// Disable to keep the backlight on.
+static const bool ENABLE_FLICKER_EFFECT = true;
+
+// The flicker effect loops for this many frames.
+// We change the displayed soul randomly when it repeats,
+// since we know the screen's longest dark period is then.
+static const unsigned ANIM_FRAMES = 70 * 50; // 70 seconds at 50 FPS
 
 // //  //   //    //     //      //       //      //     //    //   //  // //
 // Globals
 
-Backlight the_backlight;
 Buzzer the_buzzer;
+Backlight the_backlight(ENABLE_FLICKER_EFFECT ? 0.0f : 1.0f);
+SpookyFlickerEffect spooky_flicker_effect(
+    the_backlight,
+    ANIM_FRAMES,
+    ENABLE_FLICKER_EFFECT);
 
 
 // //  //   //    //     //      //       //      //     //    //   //  // //
@@ -93,101 +104,10 @@ void wait_for_tick()
 }
 
 
-static const int ANIM_FRAMES = 50 * 70;
-// static const int ANIM_FRAMES = 70;
-
-#ifdef FLICKER_FEATURE
-
-#define BACKLIGHT_SPOOKY 1
-
-
-    struct BacklightZZ {
-        static const int MIN = 0;
-        static const int MAX = (1 << 13);
-        static constexpr float GAMMA = 2.8f;
-#ifdef BACKLIGHT_SPOOKY
-        // static const int ANIM_FRAMES = 50 * 70;
-        static const int HARMONICS = 10;
-        int frame;
-        float scale;
-#else
-        static const int STEP = (MAX - MIN) / 100;
-        int inc;
-#endif
-
-#ifdef BACKLIGHT_SPOOKY
-
-        static float spooky_light(int frame) {
-            float x = (float)frame / (float)ANIM_FRAMES;
-            float acc = 0.0f;
-            const float TAU = 2.0 * std::numbers::pi;
-            for (int h = 1; h <= HARMONICS; h++) {
-                acc += std::sinf(powf(h, 1.5) * x * TAU);
-            }
-            acc += 1.0f; // reduce the duty cycle a little
-            return std::max(-acc, 0.0f); // dark part first
-        }
-
-#endif
-
-        void update()
-        {
-#ifdef BACKLIGHT_SPOOKY
-            frame = (frame + 1) % ANIM_FRAMES;
-            float brightness = scale * spooky_light(frame);
-            // printf("Bl::up: frame = %d, scale = %g, sl() = %g\n",
-            //        frame, scale, spooky_light(frame));
-            // printf("        duty = %d, brightness = %g, MAX = %d\n",
-            //        duty, brightness, MAX);
-#else
-            duty += inc;
-            if (duty > MAX) {
-                duty = MAX;
-                inc = -STEP;
-            } else if (duty < MIN) {
-                duty = MIN;
-                inc = +STEP;
-            }
-#endif
-            the_backlight.set_brightness(brightness);
-        }
-    };
-    static struct BacklightZZ backlight;
-
-    static void init_backlight()
-    {
-#ifdef BACKLIGHT_SPOOKY
-        float max_y = 0.0f;
-        for (int f = 0; f < ANIM_FRAMES; f++) {
-            float y = BacklightZZ::spooky_light(f);
-            if (max_y < y) {
-                max_y = y;
-            }
-        }
-        printf("init_backlight: max_y = %g\n", max_y);
-        backlight.frame = 0;
-        backlight.scale = 1.0f / max_y;
-#else
-        backlight.duty = 0;
-        backlight.inc = Backlight::STEP;
-#endif
-    }
-
-    void update_backlight()
-    {
-        backlight.update();
-    }
-
-#else
-
-    void init_backlight()
-    {
-        the_backlight.set_brightness(1.0f);
-    }
-
-    void update_backlight() {}
-
-#endif
+void update_backlight()
+{
+    spooky_flicker_effect.update();
+}
 
 static bool in_intro = true;
 FlashImage *current_image;
@@ -401,7 +321,6 @@ extern "C" void app_main()
     // init_prng();
     init_flash_images();
     init_SPI_display();
-    init_backlight();
     init_main_loop_timer();
 
     // Update:
@@ -414,7 +333,7 @@ extern "C" void app_main()
 
     while (1) {
         wait_for_tick();
-        update_backlight();
+        spooky_flicker_effect.update();
         update_SPI_display();
         update_animation();
     }
@@ -463,7 +382,7 @@ extern "C" void the_function_formerly_known_as_app_main()
 #endif
 
 #ifdef TEST_LCD
-    init_backlight();
+    spooky_flicker_effect.set_enabled(false);
     the_backlight.set_brightness(1.0f);
     {
         SPIDisplay the_display(0);
@@ -487,7 +406,7 @@ extern "C" void the_function_formerly_known_as_app_main()
 
         int64_t next = esp_timer_get_time() + 16666;
         for (int frame = 0; frame < 100; frame++) {
-            // update_backlight();
+            spooky_flicker_effect.update();
             ScreenPixelType *stripe = (frame & 1) ? *blackk_stripe : *red_stripe;
 
             the_display.begin_frame_centered(240, 240);

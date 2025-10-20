@@ -43,7 +43,8 @@ Break stuff into separate modules.
   * &#x2705; benchmarks
   * &#x2705; PRNG
   * &#x2705; buzzer
-  * backlight
+  * &#x2705; backlight driver
+  * &#x2705; flicker effect
   * packed color  (This needs to be templated on color order)
   * PRNG
   * image update
