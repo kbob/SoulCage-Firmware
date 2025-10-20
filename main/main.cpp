@@ -5,8 +5,6 @@
 #include <numbers>
 
 // ESP-IDF and FreeRTOS headers
-#include "driver/gpio.h"        // XXX remove me
-#include "driver/ledc.h"
 #include "esp_partition.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -16,6 +14,7 @@
 
 // Component headers
 #include "benchmarks.h"
+#include "driver_backlight.h"
 #include "driver_buzzer.h"
 #include "dsp_memcpy.h"
 #include "flash_image.h"
@@ -23,6 +22,8 @@
 #include "random.h"
 #include "spi_display.h"
 
+// //  //   //    //     //      //       //      //     //    //   //  // //
+// App Level Feature Flags
 
 #define STATIC_FEATURE 1
 #define FLICKER_FEATURE 1
@@ -31,6 +32,16 @@
 // #define RUN_BENCHMARKS
 #define PRINT_FLASH_IMAGES
 
+
+// //  //   //    //     //      //       //      //     //    //   //  // //
+// Globals
+
+Backlight the_backlight;
+Buzzer the_buzzer;
+
+
+// //  //   //    //     //      //       //      //     //    //   //  // //
+// Reporting
 
 static void identify_board()
 {
@@ -46,7 +57,10 @@ static void identify_board()
     printf("\n");
 }
 
-Buzzer the_buzzer;
+
+// //  //   //    //     //      //       //      //     //    //   //  // //
+// 
+
 
 const uint32_t BIG_TICK_PERIOD_MSEC = 20;
 TimerHandle_t big_tick_timer;
@@ -78,13 +92,6 @@ void wait_for_tick()
     (void)ulTaskNotifyTakeIndexed(index, clear_count, timeout);
 }
 
-#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
-    const gpio_num_t BACKLIGHT_GPIO = GPIO_NUM_15;
-#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
-    const gpio_num_t BACKLIGHT_GPIO = GPIO_NUM_40;
-#else
-    #error "unknown board - backlight GPIO not defined"
-#endif
 
 static const int ANIM_FRAMES = 50 * 70;
 // static const int ANIM_FRAMES = 70;
@@ -94,7 +101,7 @@ static const int ANIM_FRAMES = 50 * 70;
 #define BACKLIGHT_SPOOKY 1
 
 
-    struct Backlight {
+    struct BacklightZZ {
         static const int MIN = 0;
         static const int MAX = (1 << 13);
         static constexpr float GAMMA = 2.8f;
@@ -107,9 +114,6 @@ static const int ANIM_FRAMES = 50 * 70;
         static const int STEP = (MAX - MIN) / 100;
         int inc;
 #endif
-        ledc_mode_t mode;
-        ledc_channel_t channel;
-        int duty;
 
 #ifdef BACKLIGHT_SPOOKY
 
@@ -133,7 +137,6 @@ static const int ANIM_FRAMES = 50 * 70;
             float brightness = scale * spooky_light(frame);
             // printf("Bl::up: frame = %d, scale = %g, sl() = %g\n",
             //        frame, scale, spooky_light(frame));
-            duty = (int)(brightness * (float)MAX);
             // printf("        duty = %d, brightness = %g, MAX = %d\n",
             //        duty, brightness, MAX);
 #else
@@ -146,56 +149,22 @@ static const int ANIM_FRAMES = 50 * 70;
                 inc = +STEP;
             }
 #endif
-#ifdef BACKLIGHT_USE_GAMMA
-            float fduty = (float)duty / (float)MAX;
-            float fmapped = std::powf(fduty, GAMMA);
-            int32_t mapped_duty = (uint32_t)(fmapped * MAX);
-#else
-            int32_t mapped_duty = duty;            
-#endif
-            ESP_ERROR_CHECK(ledc_set_duty(mode, channel, mapped_duty));
-            ESP_ERROR_CHECK(ledc_update_duty(mode, channel));
+            the_backlight.set_brightness(brightness);
         }
     };
-    static struct Backlight backlight;
+    static struct BacklightZZ backlight;
 
     static void init_backlight()
     {
-        const ledc_mode_t mode = LEDC_LOW_SPEED_MODE;        
-        const ledc_timer_t timer = LEDC_TIMER_0;
-        const ledc_channel_t channel = LEDC_CHANNEL_0;
-
-        ledc_timer_config_t tc;
-        std::memset(&tc, 0, sizeof tc);
-        tc.speed_mode = mode;
-        tc.duty_resolution = LEDC_TIMER_13_BIT;
-        tc.timer_num = timer;
-        tc.freq_hz = 4000;
-        tc.clk_cfg = LEDC_AUTO_CLK;
-        ESP_ERROR_CHECK(ledc_timer_config(&tc));
-
-        ledc_channel_config_t cc;
-        std::memset(&cc, 0, sizeof cc);
-        cc.speed_mode = mode;
-        cc.channel = channel;
-        cc.timer_sel = timer;
-        cc.intr_type = LEDC_INTR_DISABLE;
-        cc.gpio_num = BACKLIGHT_GPIO;
-        cc.duty = 0;
-        cc.hpoint = 0;
-        ESP_ERROR_CHECK(ledc_channel_config(&cc));
-
-        backlight.mode = mode;
-        backlight.channel = channel;
 #ifdef BACKLIGHT_SPOOKY
         float max_y = 0.0f;
         for (int f = 0; f < ANIM_FRAMES; f++) {
-            float y = Backlight::spooky_light(f);
+            float y = BacklightZZ::spooky_light(f);
             if (max_y < y) {
                 max_y = y;
             }
         }
-        printf("backlight_init: max_y = %g\n", max_y);
+        printf("init_backlight: max_y = %g\n", max_y);
         backlight.frame = 0;
         backlight.scale = 1.0f / max_y;
 #else
@@ -213,9 +182,7 @@ static const int ANIM_FRAMES = 50 * 70;
 
     void init_backlight()
     {
-        gpio_reset_pin(BACKLIGHT_GPIO);
-        gpio_set_direction(BACKLIGHT_GPIO, GPIO_MODE_OUTPUT);
-        gpio_set_level(BACKLIGHT_GPIO, 1);
+        the_backlight.set_brightness(1.0f);
     }
 
     void update_backlight() {}
@@ -496,14 +463,8 @@ extern "C" void the_function_formerly_known_as_app_main()
 #endif
 
 #ifdef TEST_LCD
-    // Backlight the_backlight;
-    // the_backlight.set_brightness(255);
     init_backlight();
-    const gpio_num_t BACKLIGHT_GPIO = GPIO_NUM_15;
-    gpio_reset_pin(BACKLIGHT_GPIO);
-    gpio_set_direction(BACKLIGHT_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(BACKLIGHT_GPIO, 1);
-
+    the_backlight.set_brightness(1.0f);
     {
         SPIDisplay the_display(0);
         TransactionID id;
@@ -526,7 +487,7 @@ extern "C" void the_function_formerly_known_as_app_main()
 
         int64_t next = esp_timer_get_time() + 16666;
         for (int frame = 0; frame < 100; frame++) {
-            update_backlight();
+            // update_backlight();
             ScreenPixelType *stripe = (frame & 1) ? *blackk_stripe : *red_stripe;
 
             the_display.begin_frame_centered(240, 240);
