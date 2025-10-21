@@ -41,12 +41,13 @@ static const bool ENABLE_FLICKER_EFFECT = true;
 // since we know the screen's longest dark period is then.
 static const unsigned ANIM_FRAMES = 70 * 50; // 70 seconds at 50 FPS
 
+
 // //  //   //    //     //      //       //      //     //    //   //  // //
 // Globals
 
 Buzzer the_buzzer;
 Backlight the_backlight(ENABLE_FLICKER_EFFECT ? 0.0f : 1.0f);
-SpookyFlickerEffect spooky_flicker_effect(
+SpookyFlickerEffect the_spooky_flicker_effect(
     the_backlight,
     ANIM_FRAMES,
     ENABLE_FLICKER_EFFECT);
@@ -57,14 +58,14 @@ SpookyFlickerEffect spooky_flicker_effect(
 
 static void identify_board()
 {
-#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
-    printf("This is the Waveshare 1.69 board!\n");
-#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
-    printf("This is the Waveshare 1.28 board!\n");
-#else
-    printf("Is this an unknown board?");
-#error "unknown board"
-#endif
+// #ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
+//     printf("This is the Waveshare 1.69 board!\n");
+// #elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
+//     printf("This is the Waveshare 1.28 board!\n");
+// #else
+//     printf("Is this an unknown board?");
+// #error "unknown board"
+// #endif
     printf("board = \"%s\"\n", board_name);
     printf("\n");
 }
@@ -74,18 +75,18 @@ static void identify_board()
 // 
 
 
-const uint32_t BIG_TICK_PERIOD_MSEC = 20;
-TimerHandle_t big_tick_timer;
-TaskHandle_t tick_handler_task;
+static const uint32_t BIG_TICK_PERIOD_MSEC = 20;
+static TimerHandle_t big_tick_timer;
+static TaskHandle_t tick_handler_task;
 
-void big_tick_callback(TimerHandle_t)
+static void big_tick_callback(TimerHandle_t)
 {
     BaseType_t higher_priority_task_woken = pdFALSE;
     vTaskNotifyGiveIndexedFromISR(tick_handler_task, 1, &higher_priority_task_woken);
     // return higher_priority_task_woken == pdTRUE;
 }
 
-void init_main_loop_timer()
+static void init_main_loop_timer()
 {
     tick_handler_task = xTaskGetCurrentTaskHandle();
     const char *name = "big_tick";
@@ -96,7 +97,7 @@ void init_main_loop_timer()
     xTimerStart(big_tick_timer, 2);
 }
 
-void wait_for_tick()
+static void wait_for_tick()
 {
     UBaseType_t index = 1;
     BaseType_t clear_count = pdFALSE;
@@ -109,18 +110,18 @@ void wait_for_tick()
 
 
 static bool in_intro = true;
-FlashImage *current_image;
-size_t image_frames;
-size_t current_frame;
-const size_t IMAGE_BUFFER_COUNT = 2;
-ScreenPixelType
+static FlashImage *current_image;
+static size_t image_frames;
+static size_t current_frame;
+static const size_t IMAGE_BUFFER_COUNT = 2;
+static ScreenPixelType
     DMA_ATTR DSP_ALIGNED_ATTR
     image_buffers[IMAGE_BUFFER_COUNT]
                  [FlashImage::IMAGE_HEIGHT]
                  [FlashImage::IMAGE_WIDTH];
-size_t current_image_buffer;
+static size_t current_image_buffer;
 
-void init_flash_images()
+static void init_flash_images()
 {
     current_image = FlashImage::get_by_label("Intro");
     assert(current_image != nullptr);
@@ -138,12 +139,12 @@ void init_flash_images()
     current_frame = (current_frame + 1) % image_frames;
 }
 
-const int PERCENT_ANIMATION_CHANGE = 70;
+static const int PERCENT_ANIMATION_CHANGE = 70;
 
 // This is sync'd with the backlight flicker because
 // the backlight starts off dark for a few seconds.
 
-void maybe_change_animation()
+static void maybe_change_animation()
 {
     static int frame;
     frame = (frame + 1) % ANIM_FRAMES;
@@ -172,7 +173,7 @@ void maybe_change_animation()
     }
 }
 
-void update_animation()
+static void update_animation()
 {
     maybe_change_animation();
     // update the animation every 7 frames
@@ -216,7 +217,7 @@ void update_animation()
     #define MAX_NO_STATIC 4000  // 4000: 1.6 sec, 114 frames
 
     // returns true if caller should replace next stripe with static.
-    bool update_static()
+    static bool update_static()
     {
         // "static" -- get it?
         static int static_active = 0;
@@ -238,12 +239,12 @@ void update_animation()
 
 #endif
 
-SPIDisplay *the_display;
-TransactionID last_SPI_trans;
-ScreenPixelType DMA_ATTR black_stripe[FlashImage::IMAGE_WIDTH];
-const size_t STRIPE_HEIGHT = 8;
+static SPIDisplay *the_display;
+static TransactionID last_SPI_trans;
+static ScreenPixelType DMA_ATTR black_stripe[FlashImage::IMAGE_WIDTH];
+static const size_t STRIPE_HEIGHT = 8;
 
-void init_SPI_display()
+static void init_SPI_display()
 {
     the_display = new SPIDisplay(0);
 
@@ -262,11 +263,11 @@ void init_SPI_display()
 
 #ifdef STATIC_FEATURE
 
-    const size_t STATIC_STRIPE_COUNT = 6;
-    ScreenPixelType DMA_ATTR static_stripes[STATIC_STRIPE_COUNT][STRIPE_HEIGHT][240];
-    size_t static_rotor;
+    static const size_t STATIC_STRIPE_COUNT = 6;
+    static ScreenPixelType DMA_ATTR static_stripes[STATIC_STRIPE_COUNT][STRIPE_HEIGHT][240];
+    static size_t static_rotor;
 
-    void send_static_stripe(size_t y) {
+    static void send_static_stripe(size_t y) {
         // Random::srand(1);
         ScreenPixelType *stripe = *static_stripes[static_rotor];
         static_rotor = (static_rotor + 1) % STATIC_STRIPE_COUNT;
@@ -282,14 +283,14 @@ void init_SPI_display()
 
 #endif
 
-void send_image_stripe(size_t y)
+static void send_image_stripe(size_t y)
 {
     ScreenPixelType (*frame)[240] = image_buffers[current_image_buffer];
     ScreenPixelType *stripe = frame[y];
     last_SPI_trans = the_display->send_stripe(y, STRIPE_HEIGHT, stripe);
 }
 
-void update_SPI_display()
+static void update_SPI_display()
 {
 
     the_display->begin_frame_centered(240, 240);
@@ -332,17 +333,17 @@ extern "C" void app_main()
 
     while (1) {
         wait_for_tick();
-        spooky_flicker_effect.update();
+        the_spooky_flicker_effect.update();
         update_SPI_display();
         update_animation();
     }
 }
 
 #define STRIPE_HEIGHT 8
-ScreenPixelType blackk_stripe[STRIPE_HEIGHT][240];
-ScreenPixelType red_stripe[STRIPE_HEIGHT][240];
-ScreenPixelType blue_stripe[STRIPE_HEIGHT][240];
-ScreenPixelType colors[3] = {
+static ScreenPixelType blackk_stripe[STRIPE_HEIGHT][240];
+static ScreenPixelType red_stripe[STRIPE_HEIGHT][240];
+static ScreenPixelType blue_stripe[STRIPE_HEIGHT][240];
+static ScreenPixelType colors[3] = {
     ScreenPixelType(0xFF, 0, 0),
     ScreenPixelType(0, 0xFF, 0),
     ScreenPixelType(0, 0, 0xFF),
@@ -381,7 +382,7 @@ extern "C" void the_function_formerly_known_as_app_main()
 #endif
 
 #ifdef TEST_LCD
-    spooky_flicker_effect.set_enabled(false);
+    the_spooky_flicker_effect.set_enabled(false);
     the_backlight.set_brightness(1.0f);
     {
         SPIDisplay the_display(0);
@@ -405,7 +406,7 @@ extern "C" void the_function_formerly_known_as_app_main()
 
         int64_t next = esp_timer_get_time() + 16666;
         for (int frame = 0; frame < 100; frame++) {
-            spooky_flicker_effect.update();
+            the_spooky_flicker_effect.update();
             ScreenPixelType *stripe = (frame & 1) ? *blackk_stripe : *red_stripe;
 
             the_display.begin_frame_centered(240, 240);

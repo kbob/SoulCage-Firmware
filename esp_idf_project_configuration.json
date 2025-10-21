@@ -7,7 +7,9 @@
       "sdkconfigDefaults": [],
       "sdkconfigFilePath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-t169/sdkconfig"
     },
-    "env": {},
+    "env": {
+      "IDF_PATH": "/Users/kbob/lib/esp/esp-idf-v5.5.1"
+    },
     "idfTarget": "esp32s3",
     "flashBaudRate": "",
     "monitorBaudRate": "",
@@ -31,9 +33,11 @@
       "sdkconfigDefaults": [],
       "sdkconfigFilePath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-128/sdkconfig"
     },
-    "env": {},
-    "flashBaudRate": "",
+    "env": {
+      "IDF_PATH": "/Users/kbob/lib/esp/esp-idf-v5.5.1"
+    },
     "idfTarget": "esp32s3",
+    "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": -1,

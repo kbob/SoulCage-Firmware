@@ -1,6 +1,6 @@
 {
   "idf.espIdfPath": "/Users/kbob/lib/esp/esp-idf-v5.5.1",
-  "idf.pythonInstallPath": "/Users/kbob/.nix-profile/bin/python",
+  "idf.pythonInstallPath": "/nix/store/dc7kp6g4s76jlfjhjdpibjfc8pglhlcs-python3-3.12.4/bin/python3",
   "idf.openOcdConfigs": [
     "board/esp32s3-builtin.cfg"
   ],
@@ -13,7 +13,7 @@
   "clangd.arguments": [
     "--background-index",
     "--query-driver=/Users/kbob/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc",
-    "--compile-commands-dir=/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-t169"
+    "--compile-commands-dir=/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-128"
   ],
   "files.associations": {
     "numbers": "cpp",
