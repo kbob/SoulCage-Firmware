@@ -13,7 +13,7 @@
   "clangd.arguments": [
     "--background-index",
     "--query-driver=/Users/kbob/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc",
-    "--compile-commands-dir=/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build"
+    "--compile-commands-dir=/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-t169"
   ],
   "files.associations": {
     "numbers": "cpp",

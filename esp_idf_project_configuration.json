@@ -1,1 +1,50 @@
-{}
+{
+  "Waveshare ESP32-S3-LCD-Touch-1.69": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-t169",
+      "sdkconfigDefaults": [],
+      "sdkconfigFilePath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-t169/sdkconfig"
+    },
+    "env": {},
+    "idfTarget": "esp32s3",
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": -1,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
+  "Waveshare ESP32-S3-LCD-1.28": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-128",
+      "sdkconfigDefaults": [],
+      "sdkconfigFilePath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-128/sdkconfig"
+    },
+    "env": {},
+    "flashBaudRate": "",
+    "idfTarget": "esp32s3",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": -1,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  }
+}

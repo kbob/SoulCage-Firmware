@@ -53,3 +53,6 @@ private:
     size_t m_current_y;
 
 };
+
+// For testing.
+extern void test_init_string();

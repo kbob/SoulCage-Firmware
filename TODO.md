@@ -45,10 +45,13 @@ Break stuff into separate modules.
   * &#x2705; buzzer
   * &#x2705; backlight driver
   * &#x2705; flicker effect
-  * packed color  (This needs to be templated on color order)
-  * PRNG
+  * &#x2705; packed color  (This needs to be templated on color order)
+  * &#x2705; PRNG
   * image update
   * break spi_display into 3 or 4 modules
+    + &#x2705; display_controller(s)
+    + display_desc
+    + spi_display
 
 &#x2705; Find out why PSRAM isn't working on the 1.28 board
 

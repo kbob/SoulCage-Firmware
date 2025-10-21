@@ -23,6 +23,7 @@
 #include "random.h"
 #include "spi_display.h"
 
+
 // //  //   //    //     //      //       //      //     //    //   //  // //
 // App Level Feature Flags
 
@@ -103,11 +104,9 @@ void wait_for_tick()
     (void)ulTaskNotifyTakeIndexed(index, clear_count, timeout);
 }
 
+// //  //   //    //     //      //       //      //     //    //   //  // //
+// 
 
-void update_backlight()
-{
-    spooky_flicker_effect.update();
-}
 
 static bool in_intro = true;
 FlashImage *current_image;

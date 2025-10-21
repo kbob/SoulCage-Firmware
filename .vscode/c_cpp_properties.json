@@ -3,7 +3,7 @@
     {
       "name": "ESP-IDF",
       "compilerPath": "${config:idf.toolsPath}/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc",
-      "compileCommands": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/compile_commands.json",
+      "compileCommands": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-t169/compile_commands.json",
       "includePath": [
         "${config:idf.espIdfPath}/components/**",
         "${config:idf.espIdfPathWin}/components/**",

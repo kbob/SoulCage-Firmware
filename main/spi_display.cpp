@@ -1,6 +1,8 @@
 // This file's header
 #include "spi_display.h"
 
+#define NEW_CTLR
+
 // C++ standard headers
 #include <cassert>
 #include <climits>
@@ -15,45 +17,7 @@
 // Project headers
 
 // Component headers
-
-// XXX separate into display_controllers.h
-struct DisplayController {
-
-    // Some controllers need slightly different
-    int16_t CASET_x0_adjust;
-    int16_t CASET_x1_adjust;
-    int16_t RASET_y0_adjust;
-    int16_t RASET_y1_adjust;
-
-    // Every controller needs to be initialized.
-    // The init string format is modeled after TFT-eSPI's.
-    // Very compact, easy to parse.
-    size_t init_string_size;
-    const uint8_t *init_string;
-};
-
-// XXX separate into display_controllers.cpp
-static const uint8_t ST7789v2_init_string[0] = {};
-
-const DisplayController ST7789v2 = {
-    .CASET_x0_adjust = 0,
-    .CASET_x1_adjust = 0,
-    .RASET_y0_adjust = +20, // Is this all ST7789v2 or just the Waveshare 1.69?
-    .RASET_y1_adjust = +20,
-    .init_string_size = sizeof ST7789v2_init_string,
-    .init_string = ST7789v2_init_string,
-};
-
-static const uint8_t GC9A01_init_string[0] = {};
-
-const DisplayController GC9A01 = {
-    .CASET_x0_adjust = 0,
-    .CASET_x1_adjust = -1, // Why?
-    .RASET_y0_adjust = 0,
-    .RASET_y1_adjust = 0,
-    .init_string_size = sizeof GC9A01_init_string,
-    .init_string = GC9A01_init_string,
-};
+#include "display_controllers.h"
 
 // Should move these to a central location for board info.
 struct DisplayDescriptor {
@@ -96,7 +60,7 @@ static Display displays[] = {
             .dc_gpio = GPIO_NUM_4,
             .reset_gpio = GPIO_NUM_8,
             .spi_clock_speed = 80'000'000,
-            .ctlr = ST7789v2,
+            .ctlr = ST7789v2_controller,
         },
         .dev_handle = 0,
     },
@@ -118,7 +82,7 @@ static Display displays[] = {
             .dc_gpio = GPIO_NUM_8,
             .reset_gpio = GPIO_NUM_12,
             .spi_clock_speed = 80'000'000,
-            .ctlr = GC9A01,
+            .ctlr = GC9A01_controller,
         },
         .dev_handle = 0,
     },
@@ -172,25 +136,7 @@ static void init_display_SPI(Display &display)
     bus_config.sclk_io_num = desc.sclk_gpio;
     bus_config.quadwp_io_num = -1;
     bus_config.quadhd_io_num = -1;
-    // bus_config.data4_io_num = -1;
-    // bus_config.data5_io_num = -1;
-    // bus_config.data6_io_num = -1;
-    // bus_config.data7_io_num = -1;
 
-
-    //     .mosi_io_num = desc.pico_gpio,
-    //     .miso_io_num = -1,
-    //     .sclk_io_num = desc.sclk_gpio,
-    //     .quadwp_io_num = -1,
-    //     .quadhd_io_num = -1,
-    //     .data4_io_num = -1,
-    //     .data5_io_num = -1,
-    //     .data6_io_num = -1,
-    //     .data7_io_num = -1,
-    //     .data_io_default_level = 0,
-    //     .max_transfer_sz = 0,
-    //     .flags = 0,
-    // };
     ESP_ERROR_CHECK(
         spi_bus_initialize(desc.spi_host, &bus_config, SPI_DMA_CH_AUTO)
     );
@@ -203,24 +149,6 @@ static void init_display_SPI(Display &display)
     dev_config.flags = SPI_DEVICE_NO_DUMMY;
     dev_config.queue_size = 7;  // tunable
 
-    // = {
-    //     .command_bits = 0,
-    //     .address_bits = 0,
-    //     .dummy_bits = 0,
-    //     .mode = 3,                  // CPOL=1, CPHA=1
-    //     .clock_source = SPI_CLI_SRC_DEFAULT,
-    //     .duty_cycle_pos = 0,
-    //     .cs_ena_pretrans = 0,
-    //     .cs_ena_posttrans = 0,
-    //     .clock_speed_hz = 0,
-    //     .input_delay_ns = 0,
-    //     .sample_point = 0,
-    //     .spics_io_num = (int)desc.cs_gpio,
-    //     .flags = SPI_DEVICE_NO_DUMMY,
-    //     .queue_size = 7,            // Tunable
-    //     .pre_cb = 0,
-    //     .post_cb = 0,
-    // };
     spi_device_handle_t dev_handle;
     ESP_ERROR_CHECK(
         spi_bus_add_device(desc.spi_host, &dev_config, &dev_handle)
@@ -361,282 +289,40 @@ static spi_transaction_t *spi_await_transaction(Display& disp)
     return trans_desc;
 }
 
-#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
+class SPIDisplayInitOps : public DisplayController::InitOps {
+
+public:
+    SPIDisplayInitOps(Display& disp)
+    : m_disp(disp)
+    {}
+
+    void write_command(uint8_t cmd) override
+    {
+        spi_write_command(m_disp, cmd);
+    }
+
+    void write_data(const uint8_t *data, size_t size) override
+    {
+        for (size_t i = 0; i < size; i++) {
+            spi_write_data_byte(m_disp, data[i]);
+        }
+    }
+
+    void delay_msec(uint32_t msec) override
+    {
+        ::delay_msec(msec);
+    }
+
+private:
+    Display& m_disp;
+
+};
 
 static void init_LCD(Display& disp)
 {
-	spi_write_command(disp, 0x01); // Software Reset
-	delay_msec(150);
-
-	spi_write_command(disp, 0x11); // Sleep Out
-	delay_msec(255);
-
-	spi_write_command(disp, 0x3A); // Interface Pixel Format
-	spi_write_data_byte(disp, 0x55);
-	delay_msec(10);
-
-	spi_write_command(disp, 0x36); // Memory Data Access Control
-	spi_write_data_byte(disp, 0x00);
-
-	spi_write_command(disp, 0x2A); // Column Address Set
-	spi_write_data_byte(disp, 0x00);
-	spi_write_data_byte(disp, 0x00);
-	spi_write_data_byte(disp, 0x00);
-	spi_write_data_byte(disp, 0xF0);
-
-	spi_write_command(disp, 0x2B); // Row Address Set
-	spi_write_data_byte(disp, 0x00);
-	spi_write_data_byte(disp, 0x00);
-	spi_write_data_byte(disp, 0x00);
-	spi_write_data_byte(disp, 0xF0);
-
-	spi_write_command(disp, 0x21); // Display Inversion On
-	delay_msec(10);
-
-	spi_write_command(disp, 0x13); // Normal Display Mode On
-	delay_msec(10);
-
-	spi_write_command(disp, 0x29); // Display ON
-	delay_msec(255);
+    SPIDisplayInitOps init_ops(disp);
+    disp.desc.ctlr.execute_init_string(init_ops);
 }
-
-#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
-
-static void init_LCD(Display& disp)
-{
-	spi_write_command(disp, 0x01); // Software Reset
-	delay_msec(150);
-
-  spi_write_command(disp, 0xEF);    // inter register enable2
-  spi_write_command(disp, 0xEB);
-  spi_write_data_byte(disp, 0x14);
-
-  spi_write_command(disp, 0xFE);    // inter register enable1
-  spi_write_command(disp, 0xEF);    // inter register enable2
-
-  spi_write_command(disp, 0xEB);
-  spi_write_data_byte(disp, 0x14);
-
-  spi_write_command(disp, 0x84);
-  spi_write_data_byte(disp, 0x40);
-
-  spi_write_command(disp, 0x85);
-  spi_write_data_byte(disp, 0xFF);
-
-  spi_write_command(disp, 0x86);
-  spi_write_data_byte(disp, 0xFF);
-
-  spi_write_command(disp, 0x87);
-  spi_write_data_byte(disp, 0xFF);
-
-  spi_write_command(disp, 0x88);
-  spi_write_data_byte(disp, 0x0A);
-
-  spi_write_command(disp, 0x89);
-  spi_write_data_byte(disp, 0x21);
-
-  spi_write_command(disp, 0x8A);
-  spi_write_data_byte(disp, 0x00);
-
-  spi_write_command(disp, 0x8B);
-  spi_write_data_byte(disp, 0x80);
-
-  spi_write_command(disp, 0x8C);
-  spi_write_data_byte(disp, 0x01);
-
-  spi_write_command(disp, 0x8D);
-  spi_write_data_byte(disp, 0x01);
-
-  spi_write_command(disp, 0x8E);
-  spi_write_data_byte(disp, 0xFF);
-
-  spi_write_command(disp, 0x8F);
-  spi_write_data_byte(disp, 0xFF);
-
-  spi_write_command(disp, 0xB6);    // display function control
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x20);
-
-  spi_write_command(disp, 0x3A);    // COLMOD
-  spi_write_data_byte(disp, 0x05);
-
-  spi_write_command(disp, 0x90);
-  spi_write_data_byte(disp, 0x08);
-  spi_write_data_byte(disp, 0x08);
-  spi_write_data_byte(disp, 0x08);
-  spi_write_data_byte(disp, 0x08);
-
-  spi_write_command(disp, 0xBD);
-  spi_write_data_byte(disp, 0x06);
-
-  spi_write_command(disp, 0xBC);
-  spi_write_data_byte(disp, 0x00);
-
-  spi_write_command(disp, 0xFF);
-  spi_write_data_byte(disp, 0x60);
-  spi_write_data_byte(disp, 0x01);
-  spi_write_data_byte(disp, 0x04);
-
-  spi_write_command(disp, 0xC3);    // power control 2
-  spi_write_data_byte(disp, 0x13);
-  spi_write_command(disp, 0xC4);    // power control 3
-  spi_write_data_byte(disp, 0x13);
-
-  spi_write_command(disp, 0xC9);    // power control 4
-  spi_write_data_byte(disp, 0x22);
-
-  spi_write_command(disp, 0xBE);
-  spi_write_data_byte(disp, 0x11);
-
-  spi_write_command(disp, 0xE1);
-  spi_write_data_byte(disp, 0x10);
-  spi_write_data_byte(disp, 0x0E);
-
-  spi_write_command(disp, 0xDF);
-  spi_write_data_byte(disp, 0x21);
-  spi_write_data_byte(disp, 0x0c);
-  spi_write_data_byte(disp, 0x02);
-
-  spi_write_command(disp, 0xF0);    // SET_GAMMA1
-  spi_write_data_byte(disp, 0x45);
-  spi_write_data_byte(disp, 0x09);
-  spi_write_data_byte(disp, 0x08);
-  spi_write_data_byte(disp, 0x08);
-  spi_write_data_byte(disp, 0x26);
-  spi_write_data_byte(disp, 0x2A);
-
-  spi_write_command(disp, 0xF1);    // SET_GAMMA2
-  spi_write_data_byte(disp, 0x43);
-  spi_write_data_byte(disp, 0x70);
-  spi_write_data_byte(disp, 0x72);
-  spi_write_data_byte(disp, 0x36);
-  spi_write_data_byte(disp, 0x37);
-  spi_write_data_byte(disp, 0x6F);
-
-  spi_write_command(disp, 0xF2);    // SET_GAMMA3
-  spi_write_data_byte(disp, 0x45);
-  spi_write_data_byte(disp, 0x09);
-  spi_write_data_byte(disp, 0x08);
-  spi_write_data_byte(disp, 0x08);
-  spi_write_data_byte(disp, 0x26);
-  spi_write_data_byte(disp, 0x2A);
-
-  spi_write_command(disp, 0xF3);    // SET_GAMMA4
-  spi_write_data_byte(disp, 0x43);
-  spi_write_data_byte(disp, 0x70);
-  spi_write_data_byte(disp, 0x72);
-  spi_write_data_byte(disp, 0x36);
-  spi_write_data_byte(disp, 0x37);
-  spi_write_data_byte(disp, 0x6F);
-
-  spi_write_command(disp, 0xED);
-  spi_write_data_byte(disp, 0x1B);
-  spi_write_data_byte(disp, 0x0B);
-
-  spi_write_command(disp, 0xAE);
-  spi_write_data_byte(disp, 0x77);
-
-  spi_write_command(disp, 0xCD);
-  spi_write_data_byte(disp, 0x63);
-
-  spi_write_command(disp, 0x70);
-  spi_write_data_byte(disp, 0x07);
-  spi_write_data_byte(disp, 0x07);
-  spi_write_data_byte(disp, 0x04);
-  spi_write_data_byte(disp, 0x0E);
-  spi_write_data_byte(disp, 0x0F);
-  spi_write_data_byte(disp, 0x09);
-  spi_write_data_byte(disp, 0x07);
-  spi_write_data_byte(disp, 0x08);
-  spi_write_data_byte(disp, 0x03);
-
-  spi_write_command(disp, 0xE8);
-  spi_write_data_byte(disp, 0x34);
-
-  spi_write_command(disp, 0x62);
-  spi_write_data_byte(disp, 0x18);
-  spi_write_data_byte(disp, 0x0D);
-  spi_write_data_byte(disp, 0x71);
-  spi_write_data_byte(disp, 0xED);
-  spi_write_data_byte(disp, 0x70);
-  spi_write_data_byte(disp, 0x70);
-  spi_write_data_byte(disp, 0x18);
-  spi_write_data_byte(disp, 0x0F);
-  spi_write_data_byte(disp, 0x71);
-  spi_write_data_byte(disp, 0xEF);
-  spi_write_data_byte(disp, 0x70);
-  spi_write_data_byte(disp, 0x70);
-
-  spi_write_command(disp, 0x63);
-  spi_write_data_byte(disp, 0x18);
-  spi_write_data_byte(disp, 0x11);
-  spi_write_data_byte(disp, 0x71);
-  spi_write_data_byte(disp, 0xF1);
-  spi_write_data_byte(disp, 0x70);
-  spi_write_data_byte(disp, 0x70);
-  spi_write_data_byte(disp, 0x18);
-  spi_write_data_byte(disp, 0x13);
-  spi_write_data_byte(disp, 0x71);
-  spi_write_data_byte(disp, 0xF3);
-  spi_write_data_byte(disp, 0x70);
-  spi_write_data_byte(disp, 0x70);
-
-  spi_write_command(disp, 0x64);
-  spi_write_data_byte(disp, 0x28);
-  spi_write_data_byte(disp, 0x29);
-  spi_write_data_byte(disp, 0xF1);
-  spi_write_data_byte(disp, 0x01);
-  spi_write_data_byte(disp, 0xF1);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x07);
-
-  spi_write_command(disp, 0x66);
-  spi_write_data_byte(disp, 0x3C);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0xCD);
-  spi_write_data_byte(disp, 0x67);
-  spi_write_data_byte(disp, 0x45);
-  spi_write_data_byte(disp, 0x45);
-  spi_write_data_byte(disp, 0x10);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x00);
-
-  spi_write_command(disp, 0x67);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x3C);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x01);
-  spi_write_data_byte(disp, 0x54);
-  spi_write_data_byte(disp, 0x10);
-  spi_write_data_byte(disp, 0x32);
-  spi_write_data_byte(disp, 0x98);
-
-  spi_write_command(disp, 0x74);
-  spi_write_data_byte(disp, 0x10);
-  spi_write_data_byte(disp, 0x85);
-  spi_write_data_byte(disp, 0x80);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x00);
-  spi_write_data_byte(disp, 0x4E);
-  spi_write_data_byte(disp, 0x00);
-
-  spi_write_command(disp, 0x98);
-  spi_write_data_byte(disp, 0x3e);
-  spi_write_data_byte(disp, 0x07);
-
-  spi_write_command(disp, 0x35);    // tearing effect line on
-  spi_write_command(disp, 0x21);    // display inversion on
-
-  spi_write_command(disp, 0x11);    // sleep out mode
-  delay_msec(120);
-  spi_write_command(disp, 0x29);    // display on
-  delay_msec(20);
-}
-
-#endif
 
 SPIDisplay::SPIDisplay(size_t index)
 : m_in_frame(false),
@@ -816,4 +502,43 @@ void SPIDisplay::await_transaction(TransactionID id)
     while (trans->m_state == Transaction::BUSY) {
         Transaction::get_idle_transaction(*m_display);
     }
+}
+
+
+// //  //   //    //     //      //       //      //     //    //   //  // //
+// Init String Test
+
+class TestOps : public DisplayController::InitOps {
+public:
+    void write_command(uint8_t cmd) override
+    {
+        printf("write_command cmd=%#02x\n", cmd);
+    }
+    void write_data(const uint8_t *data, size_t size) override
+    {
+        printf("write_data    data={");
+        const char *space = "";
+        for (size_t i = 0; i < size; i++) {
+            printf("%s%#02x", space, data[i]);
+            space = " ";
+        }
+        printf("} size=%zu\n", size);
+    }
+
+    void delay_msec(uint32_t msec) override
+    {
+        printf("delay         %lu msec\n", msec);
+    }
+
+    void error() override
+    {
+        printf("ERROR!\n\n");
+    }
+};
+
+void test_init_string()
+{
+    TestOps ops;
+    bool ok = ST7789v2_controller.execute_init_string(ops);
+    printf("exec returned %s\n", ok ? "true" : "false");
 }
