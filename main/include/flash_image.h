@@ -3,30 +3,28 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include "board_defs.h"
+#include "pixel_types.h"
 
 class FlashImage {
 
 public:
-    static const size_t MAX_IMAGES = 3;
-    static const size_t IMAGE_HEIGHT = 240; // XXX get these from config
-    static const size_t IMAGE_WIDTH = 240;
     static const size_t FRAME_PIXEL_COUNT = IMAGE_HEIGHT * IMAGE_WIDTH;
-    typedef ScreenPixelType pixel_type;
+    static const size_t FRAME_SIZE = FRAME_PIXEL_COUNT * sizeof (pixel_type);
 
     static const size_t MAX_LABEL_SIZE = 16;
-    static const size_t FRAME_SIZE = (240 * 240 * 2); // XXX parameterize this
     static FlashImage *get_by_label(const char *);
+
+    static const size_t MAX_IMAGES = 3;
     static FlashImage *get_by_index(size_t);
 
     const char *label() const { return m_label; }
     size_t size_bytes() const { return m_size; }
     size_t frame_count() const { return m_size / FRAME_SIZE; }
     const void *base_addr() const { return m_addr; }
-    const pixel_type *frame_addr(size_t i) const
+    const image_type *frame_addr(size_t i) const
     {
-        assert(i < IMAGE_HEIGHT);
-        return (const pixel_type *)m_addr + i * FRAME_PIXEL_COUNT;
+        assert(i < frame_count());
+        return (const image_type *)m_addr + i;
     }
 
 private:

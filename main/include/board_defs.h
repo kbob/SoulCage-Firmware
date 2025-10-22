@@ -2,18 +2,17 @@
 
 #include "driver/gpio.h"
 #include "sdkconfig.h"
-#include "packed_color.h"
 
 const gpio_num_t UNDEFINED_GPIO = GPIO_NUM_MAX; // 49 on esp32s3
 
 #if defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69)
 
-    const char *const board_name = "Waveshare ESP32-L3-LCD-Touch-1.69";
-
-    typedef PackedColorEE<EOrder::RGB565, PixelEndian::BIG> ScreenPixelType;
+    const char *const board_name = "Waveshare ESP32-S3-LCD-Touch-1.69";
 
     #define DISPLAY_HEIGHT          280
     #define DISPLAY_WIDTH           240
+    #define DISPLAY_PIXEL_ORDER     EOrder::RGB565
+    #define DISPLAY_PIXEL_ENDIAN    PixelEndian::BIG
     #define DISPLAY_SPI_HOST        SPI2_HOST
     #define DISPLAY_SPI_CLOCK_SPEED 80'000'000
     #define DISPLAY_CTLR            ST7789v2_controller
@@ -29,13 +28,12 @@ const gpio_num_t UNDEFINED_GPIO = GPIO_NUM_MAX; // 49 on esp32s3
 
 #elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
 
-    const char *const board_name = "Waveshare ESP32-L3-LCD-1.28";
-
-    // Undocumented, this board wants pixel data in BGR order.
-    typedef PackedColorEE<EOrder::BGR565, PixelEndian::BIG> ScreenPixelType;
+    const char *const board_name = "Waveshare ESP32-S3-LCD-1.28";
 
     #define DISPLAY_HEIGHT          240
     #define DISPLAY_WIDTH           240
+    #define DISPLAY_PIXEL_ORDER     EOrder::BGR565
+    #define DISPLAY_PIXEL_ENDIAN    PixelEndian::BIG
     #define DISPLAY_SPI_HOST        SPI2_HOST
     #define DISPLAY_SPI_CLOCK_SPEED 80'000'000
     #define DISPLAY_CTLR            GC9A01_controller

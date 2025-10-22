@@ -22,6 +22,9 @@ SPIDisplay::SPIDisplay()
   m_frame(0),
   m_current_y(0)
 {
+    size_t stripe_size = STRIPE_HEIGHT * m_display_width * sizeof (pixel_type);
+    assert(stripe_size <= SPI_MAX_DMA_LEN);
+
     SPIDisplayDesc desc = {
         .height = m_display_height,
         .width = m_display_width,
@@ -162,8 +165,9 @@ struct Transaction {
 Transaction Transaction::s_pool[TRANSACTION_POOL_COUNT];
 size_t Transaction::s_idle_rotor;
 
-TransactionID SPIDisplay::send_stripe(size_t y, size_t height, ScreenPixelType *pixels)
-{
+TransactionID SPIDisplay::send_stripe(
+    size_t y, size_t height, const pixel_type *pixels
+) {
     // printf("send_stripe\n");
     assert(m_in_frame);
     if (m_frame_ready) {

@@ -3,12 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include "board_defs.h"
+#include "pixel_types.h"
 
-struct SPIDisplayDriver;
 typedef int32_t TransactionID;
 
 class SPIDisplay {
+
 public:
+    static const size_t STRIPE_HEIGHT = 8;
+
     SPIDisplay();
     ~SPIDisplay();
 
@@ -26,14 +29,16 @@ public:
     void begin_frame(size_t width, size_t height, 
                      size_t x_offset, size_t y_offset);
     void end_frame();
-    TransactionID send_stripe(size_t y, size_t height, ScreenPixelType *pixels);
+    TransactionID send_stripe(
+        size_t y, size_t height, const pixel_type *pixels
+    );
     void await_transaction(TransactionID);
 
 private:
     SPIDisplay(const SPIDisplay&) = delete;
     void operator = (const SPIDisplay&) = delete;
 
-    SPIDisplayDriver *m_driver;
+    struct SPIDisplayDriver *m_driver;
     size_t m_display_height;
     size_t m_display_width;
     size_t m_frame_height;

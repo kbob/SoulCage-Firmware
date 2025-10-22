@@ -15,7 +15,7 @@ and CASET commands
 &#x2705; Either fix async memcpy or create a low-priority task to copy
 frames.  (How fast can it run without interfering with SPI?)
 
- - Hmmm.  It's currently taking 17 msec to copy an image.  That's
+ - &#x2705; Hmmm.  It's currently taking 17 msec to copy an image.  That's
    a little longer than the 60 Hz frame rate I'd like to run at.
    So if I dedicated a whole core...  or else I get the vector unit
    vectoring...
@@ -47,6 +47,7 @@ Break stuff into separate modules.
   * &#x2705; flicker effect
   * &#x2705; packed color  (This needs to be templated on color order)
   * &#x2705; PRNG
+  * &#x2705; animation
   * image update
   * &#x2705; break spi_display into 3 or 4 modules
     + &#x2705; display_controllers
@@ -63,3 +64,20 @@ And so much more...
 Change tick counter to 60 Hz
 
 Interpolate video frames.  Blend video with static.
+
+
+## Notes
+
+&#x2705; board_defs should define SCREEN_PIXEL_ORDER and SCREEN_PIXEL_ENDIAN.
+
+&#x2705; pixel_type.h should define pixel_type.
+
+&#x2705; SPIDisplay should define STRIPE_HEIGHT, since it depends on
+SPI driver limitations.
+
+&#x2705; FlashImage should define image_row_type = pixel_type[240] and image_type = pixel_type[240][240].
+
+Animation deals in images.  DisplayStreamer(?) deals in images,
+screens, and stripes.
+
+Animation::current_frame returns a FlashImage::image_type.

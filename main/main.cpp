@@ -5,7 +5,6 @@
 #include <numbers>
 
 // ESP-IDF and FreeRTOS headers
-#include "esp_partition.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 
@@ -13,19 +12,16 @@
 #include "sdkconfig.h"
 
 // Component headers
-#include "benchmarks.h"
+#include "animation.h"
 #include "driver_backlight.h"
 #include "driver_buzzer.h"
-#include "dsp_memcpy.h"
-#include "flash_image.h"
 #include "flicker_effect.h"
-#include "memory_dma.h"
 #include "random.h"
 #include "spi_display.h"
 
 
 // //  //   //    //     //      //       //      //     //    //   //  // //
-// App Level Feature Flags
+// App Level Settings
 
 #define STATIC_FEATURE 1
 
@@ -41,6 +37,10 @@ static const bool ENABLE_FLICKER_EFFECT = true;
 // since we know the screen's longest dark period is then.
 static const unsigned ANIM_FRAMES = 70 * 50; // 70 seconds at 50 FPS
 
+// At the end of every ANIM_FRAMES loop, the animator might
+// choose to change the displayed soul.
+static constexpr float SOUL_CHANGE_PROBABILITY = 0.7;
+
 
 // //  //   //    //     //      //       //      //     //    //   //  // //
 // Globals
@@ -51,6 +51,7 @@ SpookyFlickerEffect the_spooky_flicker_effect(
     the_backlight,
     ANIM_FRAMES,
     ENABLE_FLICKER_EFFECT);
+Animation the_animation(ANIM_FRAMES, SOUL_CHANGE_PROBABILITY);
 
 
 // //  //   //    //     //      //       //      //     //    //   //  // //
@@ -97,107 +98,9 @@ static void wait_for_tick()
     (void)ulTaskNotifyTakeIndexed(index, clear_count, timeout);
 }
 
+
 // //  //   //    //     //      //       //      //     //    //   //  // //
 // 
-
-
-static bool in_intro = true;
-static FlashImage *current_image;
-static size_t image_frames;
-static size_t current_frame;
-static const size_t IMAGE_BUFFER_COUNT = 2;
-static ScreenPixelType
-    DMA_ATTR DSP_ALIGNED_ATTR
-    image_buffers[IMAGE_BUFFER_COUNT]
-                 [FlashImage::IMAGE_HEIGHT]
-                 [FlashImage::IMAGE_WIDTH];
-static size_t current_image_buffer;
-
-static void init_flash_images()
-{
-    current_image = FlashImage::get_by_label("Intro");
-    assert(current_image != nullptr);
-    image_frames = current_image->frame_count();
-
-    auto *dst = *image_buffers[current_image_buffer];
-    const auto *src = current_image->frame_addr(current_frame);
-    assert(dst);
-    assert(src);
-    size_t pixel_count = FlashImage::FRAME_PIXEL_COUNT;
-    size_t size = pixel_count * sizeof (ScreenPixelType);
-
-    std::memcpy(dst, src, size);
-
-    current_frame = (current_frame + 1) % image_frames;
-}
-
-static const int PERCENT_ANIMATION_CHANGE = 70;
-
-// This is sync'd with the backlight flicker because
-// the backlight starts off dark for a few seconds.
-
-static void maybe_change_animation()
-{
-    static int frame;
-    frame = (frame + 1) % ANIM_FRAMES;
-    if (frame != 0) {
-        return;
-    }
-
-    if (Random::randint(0, 100) < PERCENT_ANIMATION_CHANGE) {
-        auto old_label = current_image->label();
-
-        // Don't interrupt the intro.
-        if (!std::strcmp(old_label, "Intro")) {
-            return;
-        }
-        const char *new_label;
-        if (!std::strcmp(old_label, "soul_m")) {
-            new_label = "soul_f";
-        } else {
-            assert(strcmp(old_label, "soul_f") == 0);
-            new_label = "soul_m";
-        }
-        current_image = FlashImage::get_by_label(new_label);
-        assert(current_image != nullptr);
-        image_frames = current_image->frame_count();
-        current_frame = Random::randint(0, image_frames);
-    }
-}
-
-static void update_animation()
-{
-    maybe_change_animation();
-    // update the animation every 7 frames
-    static int frame;
-    frame = (frame + 1) % 7;
-    if (frame != 0) {
-        return;
-    }
-
-    // printf("update animation frame %zu\n", current_frame);
-    size_t next_i_buf = (current_image_buffer + 1) % IMAGE_BUFFER_COUNT;
-    auto *dst = *image_buffers[next_i_buf];
-    const auto *src = current_image->frame_addr(current_frame);
-    assert(dst);
-    assert(src);
-    size_t pixel_count = FlashImage::FRAME_PIXEL_COUNT;
-    size_t size = pixel_count * sizeof (ScreenPixelType);
-
-    std::memcpy(dst, src, size);
-
-    current_image_buffer = next_i_buf;
-
-    current_frame = (current_frame + 1) % image_frames;
-    if (current_frame == 0 && in_intro) {
-        // if we've finished the intro, start on one of the souls..
-        in_intro = false;
-        const char *next_image = Random::rand() % 2 ? "soul_f" : "soul_m";
-        current_image = FlashImage::get_by_label(next_image);
-        assert(current_image != nullptr);
-        image_frames = current_image->frame_count();
-    }
-}
 
 #ifdef STATIC_FEATURE
 
@@ -233,8 +136,8 @@ static void update_animation()
 
 static SPIDisplay *the_display;
 static TransactionID last_SPI_trans;
-static ScreenPixelType DMA_ATTR black_stripe[FlashImage::IMAGE_WIDTH];
-static const size_t STRIPE_HEIGHT = 8;
+static pixel_type DMA_ATTR black_stripe[IMAGE_WIDTH];
+static const size_t STRIPE_HEIGHT = SPIDisplay::STRIPE_HEIGHT;
 
 static void init_SPI_display()
 {
@@ -248,7 +151,8 @@ static void init_SPI_display()
     assert(w == 240);
     the_display->begin_frame(w, h, 0, 0);
     for (int y = 0; y < h; y += BLACK_STRIPE_HEIGHT) {
-        last_SPI_trans = the_display->send_stripe(y, BLACK_STRIPE_HEIGHT, black_stripe);
+        last_SPI_trans =
+            the_display->send_stripe(y, BLACK_STRIPE_HEIGHT, black_stripe);
     }
     the_display->end_frame();
 }
@@ -256,19 +160,19 @@ static void init_SPI_display()
 #ifdef STATIC_FEATURE
 
     static const size_t STATIC_STRIPE_COUNT = 6;
-    static ScreenPixelType DMA_ATTR static_stripes[STATIC_STRIPE_COUNT][STRIPE_HEIGHT][240];
+    static pixel_type DMA_ATTR static_stripes[STATIC_STRIPE_COUNT][STRIPE_HEIGHT][240];
     static size_t static_rotor;
 
     static void send_static_stripe(size_t y) {
         // Random::srand(1);
-        ScreenPixelType *stripe = *static_stripes[static_rotor];
+        pixel_type *stripe = *static_stripes[static_rotor];
         static_rotor = (static_rotor + 1) % STATIC_STRIPE_COUNT;
         for (size_t i = 0; i < STRIPE_HEIGHT * 240; i += 4) {
             int x = Random::rand();
-            stripe[i + 0] = ScreenPixelType::from_grey8(x >> 0 & 0xFF);
-            stripe[i + 1] = ScreenPixelType::from_grey8(x >> 8 & 0xFF);
-            stripe[i + 2] = ScreenPixelType::from_grey8(x >> 16 & 0xFF);
-            stripe[i + 3] = ScreenPixelType::from_grey8(x >> 23 & 0xFF);
+            stripe[i + 0] = pixel_type::from_grey8(x >> 0 & 0xFF);
+            stripe[i + 1] = pixel_type::from_grey8(x >> 8 & 0xFF);
+            stripe[i + 2] = pixel_type::from_grey8(x >> 16 & 0xFF);
+            stripe[i + 3] = pixel_type::from_grey8(x >> 23 & 0xFF);
         }
         last_SPI_trans = the_display->send_stripe(y, STRIPE_HEIGHT, stripe);
     }
@@ -277,8 +181,8 @@ static void init_SPI_display()
 
 static void send_image_stripe(size_t y)
 {
-    ScreenPixelType (*frame)[240] = image_buffers[current_image_buffer];
-    ScreenPixelType *stripe = frame[y];
+    const image_type *frame = the_animation.current_frame();
+    const pixel_type *stripe = (*frame)[y];
     last_SPI_trans = the_display->send_stripe(y, STRIPE_HEIGHT, stripe);
 }
 
@@ -310,7 +214,6 @@ extern "C" void app_main()
     printf("app_main\n");
     identify_board();
 
-    init_flash_images();
     init_SPI_display();
     init_main_loop_timer();
 
@@ -318,83 +221,6 @@ extern "C" void app_main()
         wait_for_tick();
         the_spooky_flicker_effect.update();
         update_SPI_display();
-        update_animation();
+        the_animation.update();
     }
-}
-
-#define STRIPE_HEIGHT 8
-static ScreenPixelType blackk_stripe[STRIPE_HEIGHT][240];
-static ScreenPixelType red_stripe[STRIPE_HEIGHT][240];
-static ScreenPixelType blue_stripe[STRIPE_HEIGHT][240];
-static ScreenPixelType colors[3] = {
-    ScreenPixelType(0xFF, 0, 0),
-    ScreenPixelType(0, 0xFF, 0),
-    ScreenPixelType(0, 0, 0xFF),
-};
-
-// extern "C" void app_main()
-extern "C" void the_function_formerly_known_as_app_main()
-{
-    printf("app_main\n");
-    printf("board = \"%s\"\n", board_name);
-    printf("\n");
-
-#ifdef PRINT_FLASH_IMAGES    
-    printf("Flash images found:\n");
-    for (size_t i = 0; i < FlashImage::MAX_IMAGES; i++) {
-        if (FlashImage *image = FlashImage::get_by_index(i)) {
-            printf("  \"%s\"%*s %zu bytes, %zu frames\n",
-                image->label(),
-                (int)(FlashImage::MAX_LABEL_SIZE - std::strlen(image->label())), "",
-                image->size_bytes(),image->frame_count());
-        }
-    }
-    printf("\n");
-#endif
-
-#ifdef RUN_BENCHMARKS
-    run_memcpy_benchmarks();
-#endif
-
-#ifdef TEST_LCD
-    the_spooky_flicker_effect.set_enabled(false);
-    the_backlight.set_brightness(1.0f);
-    {
-        SPIDisplay the_display;
-        TransactionID id;
-
-        for (size_t y = 0; y < STRIPE_HEIGHT; y++) {
-            for (size_t x = 0; x < 240; x++) {
-                red_stripe[y][x] = colors[0];
-                blue_stripe[y][x] = colors[2];
-            }
-        }
-
-        // fill with black
-        size_t w = the_display.width();
-        size_t h = the_display.height();
-        the_display.begin_frame(w, h, 0, 0);
-        for (int y = 0; y < 280; y += STRIPE_HEIGHT) {
-            id = the_display.send_stripe(y, STRIPE_HEIGHT, *blackk_stripe);
-        }
-        the_display.end_frame();
-
-        int64_t next = esp_timer_get_time() + 16666;
-        for (int frame = 0; frame < 100; frame++) {
-            the_spooky_flicker_effect.update();
-            ScreenPixelType *stripe = (frame & 1) ? *blackk_stripe : *red_stripe;
-
-            the_display.begin_frame_centered(240, 240);
-            for (size_t y = 0; y < 240; y += STRIPE_HEIGHT) {
-                id = the_display.send_stripe(y, STRIPE_HEIGHT, stripe);
-            }
-            the_display.end_frame();
-            while (esp_timer_get_time() < next)
-                ;
-            next += 100'000;
-        }
-        the_display.await_transaction(id); // only wait for the last one ever
-        vTaskDelay(1000); // 10 seconds
-    }
-#endif
 }

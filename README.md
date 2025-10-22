@@ -23,7 +23,7 @@ Other features
 
 # Install from Binaries
 
-There are prebuild binaries in the prebuilt directory.  To install them,
+There are prebuilt binaries in the prebuilt directory.  To install them,
 you need the `esptool` utility.  `esptool` is included in Arduino,
 ESP-IDF, PlatformIO, and ESPhome, among others, so you may already have
 it.  It may be called `esptool.py` or `esptool.exe` on Windows.  If so,
@@ -136,9 +136,9 @@ it yet, so *caveat developer*.)
  - Add `[configname]` to the board list in `main/Kconfig.projbuild`.
 
  - Add definitions to `main/include/board_defs.h`.
-   This is the hard part.
+   Use the existing boards as examples.
 
-\* "Shell friendly" means good for use in a shell or filename:
+\*"Shell friendly" means good for use in a shell or filename:
 
  - no whitespace
  - no punctuation characters with meaning to a shell (&lt; &gt; ~ etc.)
