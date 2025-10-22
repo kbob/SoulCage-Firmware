@@ -12,18 +12,13 @@ public:
     SPIDisplay();
     ~SPIDisplay();
 
-    // streaming interface
-    // set image size -- calculate offsets
-    // this is the SPI access functions, not the async feeder model
-    // no backlight control
-
     size_t height() const { return m_display_height; }
     size_t width() const { return m_display_width; }
 
-    // To stream video, call begin_frame, call send_stripe with
-    // whatever size stripes you want, then call end_frame.
+    // To stream video, call begin_frame, call send_stripe repeatedly,
+    // then call end_frame.
     // Repeat for every frame at your own pace.
-    // send_stripe blocks.  begin_frame() and end_frame() don't
+    // send_stripe blocks.  begin_frame() and end_frame() don't.
     // send_stripe returns a transaction ID; clients should
     // call await_transaction before reusing the pixel memory.
 
@@ -38,7 +33,6 @@ private:
     SPIDisplay(const SPIDisplay&) = delete;
     void operator = (const SPIDisplay&) = delete;
 
-//     Display *m_display;
     SPIDisplayDriver *m_driver;
     size_t m_display_height;
     size_t m_display_width;
@@ -52,8 +46,4 @@ private:
     bool m_frame_ready;
     uint8_t m_frame;
     size_t m_current_y;
-
 };
-
-// For testing.
-extern void test_init_string();
