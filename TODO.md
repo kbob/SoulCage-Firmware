@@ -51,6 +51,7 @@ Break stuff into separate modules.
   * break spi_display into 3 or 4 modules
     + &#x2705; display_controller(s)
     + display_desc
+    + spi_driver
     + spi_display
 
 &#x2705; Find out why PSRAM isn't working on the 1.28 board

@@ -1,17 +1,5 @@
 #include "display_controllers.h"
 
-enum RegisterAddress {
-    SWRST = 0x01,
-    SLPOUT = 0x11,
-    NORON = 0x13,
-    INVON = 0x21,
-    DISPON = 0x29,
-    CASET = 0x2A,
-    PASET = 0x2B,
-    MADCTL = 0x36,
-    COLMOD = 0x3A,
-};
-
 static const uint8_t DELAY_BIT = 0x80;
 
 

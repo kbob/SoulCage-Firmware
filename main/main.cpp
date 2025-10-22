@@ -58,14 +58,6 @@ SpookyFlickerEffect the_spooky_flicker_effect(
 
 static void identify_board()
 {
-// #ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
-//     printf("This is the Waveshare 1.69 board!\n");
-// #elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
-//     printf("This is the Waveshare 1.28 board!\n");
-// #else
-//     printf("Is this an unknown board?");
-// #error "unknown board"
-// #endif
     printf("board = \"%s\"\n", board_name);
     printf("\n");
 }
@@ -246,7 +238,7 @@ static const size_t STRIPE_HEIGHT = 8;
 
 static void init_SPI_display()
 {
-    the_display = new SPIDisplay(0);
+    the_display = new SPIDisplay();
 
     const size_t BLACK_STRIPE_HEIGHT = 1;
 
@@ -318,18 +310,9 @@ extern "C" void app_main()
     printf("app_main\n");
     identify_board();
 
-    // init_prng();
     init_flash_images();
     init_SPI_display();
     init_main_loop_timer();
-
-    // Update:
-    // change frames every 7 ticks
-    // update screen every tick
-    // update backlight every tick
-    // change animation:
-    //     from intro after it's done
-    //     between him and her when the backlight cycles (randomly)
 
     while (1) {
         wait_for_tick();
@@ -353,14 +336,6 @@ static ScreenPixelType colors[3] = {
 extern "C" void the_function_formerly_known_as_app_main()
 {
     printf("app_main\n");
-#ifdef CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69
-    printf("This is the Waveshare 1.69 board!\n");
-#elif defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_1_28)
-    printf("This is the Waveshare 1.28 board!\n");
-#else
-    #error "no board?"
-    printf("Is this an unknown board?");
-#endif
     printf("board = \"%s\"\n", board_name);
     printf("\n");
 
@@ -385,7 +360,7 @@ extern "C" void the_function_formerly_known_as_app_main()
     the_spooky_flicker_effect.set_enabled(false);
     the_backlight.set_brightness(1.0f);
     {
-        SPIDisplay the_display(0);
+        SPIDisplay the_display;
         TransactionID id;
 
         for (size_t y = 0; y < STRIPE_HEIGHT; y++) {

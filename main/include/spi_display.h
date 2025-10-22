@@ -4,12 +4,12 @@
 #include <cstdint>
 #include "board_defs.h"
 
-struct Display;
+struct SPIDisplayDriver;
 typedef int32_t TransactionID;
 
 class SPIDisplay {
 public:
-    SPIDisplay(size_t index); // displays 0, 1, ...
+    SPIDisplay();
     ~SPIDisplay();
 
     // streaming interface
@@ -17,8 +17,8 @@ public:
     // this is the SPI access functions, not the async feeder model
     // no backlight control
 
-    size_t height() const;
-    size_t width() const;
+    size_t height() const { return m_display_height; }
+    size_t width() const { return m_display_width; }
 
     // To stream video, call begin_frame, call send_stripe with
     // whatever size stripes you want, then call end_frame.
@@ -38,7 +38,8 @@ private:
     SPIDisplay(const SPIDisplay&) = delete;
     void operator = (const SPIDisplay&) = delete;
 
-    Display *m_display;
+//     Display *m_display;
+    SPIDisplayDriver *m_driver;
     size_t m_display_height;
     size_t m_display_width;
     size_t m_frame_height;

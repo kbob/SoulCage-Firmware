@@ -4,6 +4,19 @@
 #include <cstddef>
 #include <cstdint>
 
+enum DisplayRegister {
+    SWRST = 0x01,
+    SLPOUT = 0x11,
+    NORON = 0x13,
+    INVON = 0x21,
+    DISPON = 0x29,
+    CASET = 0x2A,
+    PASET = 0x2B,
+    RAMWR = 0x2C,
+    MADCTL = 0x36,
+    COLMOD = 0x3A,
+};
+
 // Read-only description of a display controller
 //
 // The `init_string` format is based on TFT-eSPI's.  It is compact
@@ -41,6 +54,7 @@ struct DisplayController {
         virtual void write_data(const uint8_t *data, size_t count) = 0;
         virtual void delay_msec(uint32_t msec) = 0;
         virtual void error() { assert(false && "malformed init string"); }
+        virtual ~InitOps() {}
     };
 
     // parse init string, call back to ops, return true on success

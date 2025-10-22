@@ -1,8 +1,5 @@
 FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/main/*.*)
 
-# set(srcs "main.cpp"
-# )
-
 set(priv_requirements
     esp_driver_gpio
     esp_driver_ledc
