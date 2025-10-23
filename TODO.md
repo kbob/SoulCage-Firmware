@@ -35,10 +35,10 @@ frames.  (How fast can it run without interfering with SPI?)
 
 &#x2705; In `main/CMakeLists.txt`, change driver to list of drivers actually used.
 
-Remove hardcoded constants everywhere.  Have one set of constants
+&#x2705; Remove hardcoded constants everywhere.  Have one set of constants
 for screen resolution and for image size.
 
-Break stuff into separate modules.
+&#x2705; Break stuff into separate modules.
 
   * &#x2705; benchmarks
   * &#x2705; PRNG
@@ -48,7 +48,8 @@ Break stuff into separate modules.
   * &#x2705; packed color  (This needs to be templated on color order)
   * &#x2705; PRNG
   * &#x2705; animation
-  * image update
+  * &#x2705; video streaming
+  * &#x2705; static noise
   * &#x2705; break spi_display into 3 or 4 modules
     + &#x2705; display_controllers
     + &#x2705; spi_driver
@@ -61,23 +62,6 @@ And so much more...
 
 ## Features
 
-Change tick counter to 60 Hz
+&#x2705; Change tick counter to 60 Hz
 
 Interpolate video frames.  Blend video with static.
-
-
-## Notes
-
-&#x2705; board_defs should define SCREEN_PIXEL_ORDER and SCREEN_PIXEL_ENDIAN.
-
-&#x2705; pixel_type.h should define pixel_type.
-
-&#x2705; SPIDisplay should define STRIPE_HEIGHT, since it depends on
-SPI driver limitations.
-
-&#x2705; FlashImage should define image_row_type = pixel_type[240] and image_type = pixel_type[240][240].
-
-Animation deals in images.  DisplayStreamer(?) deals in images,
-screens, and stripes.
-
-Animation::current_frame returns a FlashImage::image_type.

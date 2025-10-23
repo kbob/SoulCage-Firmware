@@ -4,11 +4,14 @@
 // C++ standard headers
 #include <cstring>
 
+// ESP-IDF headers
+#include "freertos/FreeRTOS.h"
+
 // Component headers
 #include "flash_image.h"
 #include "random.h"
 
-image_type Animation::s_image_buffers[IMAGE_BUFFER_COUNT];
+image_type DMA_ATTR Animation::s_image_buffers[IMAGE_BUFFER_COUNT];
 
 Animation::Animation(unsigned anim_frames, float change_prob)
 : m_anim_frame_count(anim_frames),
@@ -32,9 +35,9 @@ image_type *Animation::current_frame() const
 void Animation::update()
 {
     maybe_change_animation();
-    // update the animation every 7 frames
+    // update the animation every 8 frames
     static int frame;
-    frame = (frame + 1) % 7;
+    frame = (frame + 1) % 8;
     if (frame != 0) {
         return;
     }

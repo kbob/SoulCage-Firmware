@@ -59,7 +59,7 @@ void SPIDisplay::begin_frame_centered(size_t width, size_t height)
 void SPIDisplay::begin_frame(size_t width, size_t height,
                     size_t x_offset, size_t y_offset)
 {
-    // printf("begin_frame(w=%zu, h=%zu, xo=%zu, y0=%zu)\n",
+    // printf("begin_frame(w=%zu, h=%zu, xo=%zu, yo=%zu)\n",
     //     width, height, x_offset, y_offset);
     assert(width + x_offset <= m_display_width);
     assert(height + y_offset <= m_display_height);
@@ -78,6 +78,7 @@ void SPIDisplay::begin_frame(size_t width, size_t height,
 
 void SPIDisplay::end_frame()
 {
+    // printf("end_frame\n");
     assert(m_in_frame);
     m_in_frame = false;
 }
@@ -166,9 +167,9 @@ Transaction Transaction::s_pool[TRANSACTION_POOL_COUNT];
 size_t Transaction::s_idle_rotor;
 
 TransactionID SPIDisplay::send_stripe(
-    size_t y, size_t height, const pixel_type *pixels
-) {
-    // printf("send_stripe\n");
+    size_t y, size_t height, const pixel_type *pixels)
+{
+    // printf("send_stripe(y=%zu height=%zu pixels=%p)\n", y, height, pixels);
     assert(m_in_frame);
     if (m_frame_ready) {
         Transaction::await_all_transactions(m_driver);

@@ -3,6 +3,7 @@
 
 // ESP-IDF headers
 #include "esp_err.h"
+#include "freertos/FreeRTOS.h"
 
 // Component headers
 #include "board_defs.h"         // for UNDEFINED_GPIO
