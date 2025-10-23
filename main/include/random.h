@@ -29,9 +29,9 @@ private:
     // We do this so we can privately use a noise source as
     // the default seed.
     void o_srand(unsigned seed) { std::srand(seed); }
-    unsigned o_rand() { return std::rand(); }
+    unsigned o_rand();
     unsigned o_randint(unsigned min, unsigned max) {
-        return min + std::rand() % (max - min);
+        return min + o_rand() % (max - min);
     }
  
     static Random s_instance;
