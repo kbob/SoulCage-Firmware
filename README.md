@@ -151,5 +151,8 @@ it yet, so *caveat developer*.)
 I want to make this available for Halloween 2025.  So I've published
 some prebuilt binaries and instructions for flashing them.
 
-You're welcome to build from source, but be warned, the code is a great
-big mess.  I intend to clean it all up, but it will take a while.
+~~You're welcome to build from source, but be warned, the code is a great
+big mess.  I intend to clean it all up, but it will take a while.~~
+
+**Update 2025-10-23:** Refactoring is complete.
+This code is as good as it's going to get.  Enjoy!
