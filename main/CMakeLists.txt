@@ -2,6 +2,7 @@ FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/main/*.*)
 
 set(priv_requirements
     bootloader_support
+    esp_adc
     esp_driver_gpio
     esp_driver_ledc
     esp_driver_spi

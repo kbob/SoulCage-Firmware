@@ -6,6 +6,7 @@
 
 // Component headers
 #include "animation.h"
+#include "battery_monitor.h"
 #include "board_defs.h"
 #include "refresh_clock.h"
 #include "driver_backlight.h"
@@ -26,6 +27,9 @@ static const bool ENABLE_STATIC_EFFECT = true;
 
 // Screen refresh rate
 static constexpr float SCREEN_REFRESH_HZ = 60.0f;
+
+// How often to log battery voltage to serial port
+static const int BATTERY_LOG_PERIOD_SEC = 10;
 
 // The flicker effect loops for this many frames.
 // We change the displayed soul randomly when it repeats,
@@ -49,6 +53,7 @@ extern "C" void app_main()
     // Create the world.
     // create and blank the screen before turning on the backlight.
     Buzzer the_buzzer;
+    BatteryMonitor the_battery(BATTERY_LOG_PERIOD_SEC);
 
     Animation the_animation(ANIM_FRAMES, SOUL_CHANGE_PROBABILITY);
 
@@ -72,6 +77,7 @@ extern "C" void app_main()
         the_refresh_clock.wait();
         the_spooky_flicker_effect.update();
         the_streamer.update();
+        the_battery.update();
         the_animation.update(); // Do this last, every 8th frame is slow
     }
 }

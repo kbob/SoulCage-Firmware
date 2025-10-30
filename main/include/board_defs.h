@@ -5,6 +5,9 @@
 
 const gpio_num_t UNDEFINED_GPIO = GPIO_NUM_MAX; // 49 on esp32s3
 
+// BATTERY_ADC_R_ABOVE and R_BELOW are the resistor values of the
+// battery ADC sensor's voltage divider.
+
 #if defined(CONFIG_BOARD_WAVESHARE_ESP32_S3_LCD_TOUCH_1_69)
 
     const char *const board_name = "Waveshare ESP32-S3-LCD-Touch-1.69";
@@ -23,6 +26,10 @@ const gpio_num_t UNDEFINED_GPIO = GPIO_NUM_MAX; // 49 on esp32s3
     #define DISPLAY_RESET_GPIO      GPIO_NUM_8
 
     #define BACKLIGHT_GPIO          GPIO_NUM_15
+
+    #define BATTERY_ADC_GPIO        GPIO_NUM_1
+    #define BATTERY_ADC_R_ABOVE     200e3f  /* per schematic */
+    #define BATTERY_ADC_R_BELOW     100e3f
 
     #define BUZZER_GPIO             GPIO_NUM_42
 
@@ -45,7 +52,9 @@ const gpio_num_t UNDEFINED_GPIO = GPIO_NUM_MAX; // 49 on esp32s3
 
     #define BACKLIGHT_GPIO          GPIO_NUM_40
 
-    #define NONSENSE (foo_42 + BazXX::YY)
+    #define BATTERY_ADC_GPIO        GPIO_NUM_1
+    #define BATTERY_ADC_R_ABOVE     200e3f /* XXX Schematic says 100K, 100K; */
+    #define BATTERY_ADC_R_BELOW     80e3f  /*     meter says 200K, 80K */
 
     #define BUZZER_GPIO             UNDEFINED_GPIO
 
