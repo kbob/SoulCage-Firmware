@@ -3,9 +3,9 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-t169",
+      "buildDirectoryPath": "/Users/kbob/Documents/Making/Done for Now/Soul_Cage/SoulCage-Firmware/build/ws-t169",
       "sdkconfigDefaults": [],
-      "sdkconfigFilePath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-t169/sdkconfig"
+      "sdkconfigFilePath": "/Users/kbob/Documents/Making/Done for Now/Soul_Cage/SoulCage-Firmware/build/ws-t169/sdkconfig"
     },
     "env": {
       "IDF_PATH": "/Users/kbob/lib/esp/esp-idf-v5.5.1"
@@ -29,9 +29,9 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-128",
+      "buildDirectoryPath": "/Users/kbob/Documents/Making/Done for Now/Soul_Cage/SoulCage-Firmware/build/ws-128",
       "sdkconfigDefaults": [],
-      "sdkconfigFilePath": "/Users/kbob/Desktop/Soul_Cage/ESP-IDF/Soul_Cage/build/ws-128/sdkconfig"
+      "sdkconfigFilePath": "/Users/kbob/Documents/Making/Done for Now/Soul_Cage/SoulCage-Firmware/build/ws-128/sdkconfig"
     },
     "env": {
       "IDF_PATH": "/Users/kbob/lib/esp/esp-idf-v5.5.1"
